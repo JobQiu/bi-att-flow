@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-DATA_DIR=$HOME/data
+DATA_DIR=/content/bi-att-flow/data
 mkdir $DATA_DIR
 
 # Download SQuAD

@@ -8,6 +8,7 @@ from collections import Counter
 
 from tqdm import tqdm
 
+from config.configuration import Config
 from squad.utils import get_word_span, get_word_idx, process_tokens
 
 
@@ -18,11 +19,9 @@ def main():
 
 def get_args():
     parser = argparse.ArgumentParser()
-    home = os.path.expanduser("~")
-    source_dir = os.path.join(home, "data", "squad")
-    target_dir = "data/squad"
-    glove_dir = os.path.join(home, "data", "glove")
-    parser.add_argument('-s', "--source_dir", default=source_dir)
+    target_dir = Config.squadLocation
+    glove_dir = Config.gloveLocation  # os.path.join(home, "data", "glove")
+    parser.add_argument('-s', "--source_dir", default=target_dir)
     parser.add_argument('-t', "--target_dir", default=target_dir)
     parser.add_argument('-d', "--debug", action='store_true')
     parser.add_argument("--train_ratio", default=0.9, type=int)
@@ -100,7 +99,8 @@ def get_word2vec(args, word_counter):
             elif word.upper() in word_counter:
                 word2vec_dict[word.upper()] = vector
 
-    print("{}/{} of word vocab have corresponding vectors in {}".format(len(word2vec_dict), len(word_counter), glove_path))
+    print("{}/{} of word vocab have corresponding vectors in {}".format(len(word2vec_dict), len(word_counter),
+                                                                        glove_path))
     return word2vec_dict
 
 
@@ -108,6 +108,7 @@ def prepro_each(args, data_type, start_ratio=0.0, stop_ratio=1.0, out_name="defa
     if args.tokenizer == "PTB":
         import nltk
         sent_tokenize = nltk.sent_tokenize
+
         def word_tokenize(tokens):
             return [token.replace("''", '"').replace("``", '"') for token in nltk.word_tokenize(tokens)]
     elif args.tokenizer == 'Stanford':
@@ -180,9 +181,9 @@ def prepro_each(args, data_type, start_ratio=0.0, stop_ratio=1.0, out_name="defa
                     assert len(xi[yi0[0]]) > yi0[1]
                     assert len(xi[yi1[0]]) >= yi1[1]
                     w0 = xi[yi0[0]][yi0[1]]
-                    w1 = xi[yi1[0]][yi1[1]-1]
+                    w1 = xi[yi1[0]][yi1[1] - 1]
                     i0 = get_word_idx(context, xi, yi0)
-                    i1 = get_word_idx(context, xi, (yi1[0], yi1[1]-1))
+                    i1 = get_word_idx(context, xi, (yi1[0], yi1[1] - 1))
                     cyi0 = answer_start - i0
                     cyi1 = answer_stop - i1 - 1
                     # print(answer_text, w0[cyi0:], w1[:cyi1+1])
@@ -225,7 +226,6 @@ def prepro_each(args, data_type, start_ratio=0.0, stop_ratio=1.0, out_name="defa
 
     print("saving ...")
     save(args, data, shared, out_name)
-
 
 
 if __name__ == "__main__":

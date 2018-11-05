@@ -155,9 +155,17 @@ def load_metadata(config, data_type):
         return metadata
 
 
-def read_data(config, data_type, ref, data_filter=None):
-    data_path = os.path.join(config.data_dir, "data_{}.json".format(data_type))
-    shared_path = os.path.join(config.data_dir, "shared_{}.json".format(data_type))
+def read_data(config, dataset, ref, data_filter=None):
+    """
+
+    :param config: tf flags that store configurations
+    :param dataset: train,
+    :param ref: True, what does this mean,
+    :param data_filter:
+    :return:
+    """
+    data_path = os.path.join(config.data_dir, "data_{}.json".format(dataset))
+    shared_path = os.path.join(config.data_dir, "shared_{}.json".format(dataset))
     with open(data_path, 'r') as fh:
         data = json.load(fh)
     with open(shared_path, 'r') as fh:
@@ -175,9 +183,10 @@ def read_data(config, data_type, ref, data_filter=None):
             mask.append(data_filter(each, shared))
         valid_idxs = [idx for idx in range(len(mask)) if mask[idx]]
 
-    print("Loaded {}/{} examples from {}".format(len(valid_idxs), num_examples, data_type))
+    print("Loaded {}/{} examples from {}".format(len(valid_idxs), num_examples, dataset))
 
     shared_path = config.shared_path or os.path.join(config.out_dir, "shared.json")
+
     if not ref:
         word2vec_dict = shared['lower_word2vec'] if config.lower_word else shared['word2vec']
         word_counter = shared['lower_word_counter'] if config.lower_word else shared['word_counter']
@@ -203,7 +212,7 @@ def read_data(config, data_type, ref, data_filter=None):
         shared['char2idx'][UNK] = 1
         json.dump({'word2idx': shared['word2idx'], 'char2idx': shared['char2idx']}, open(shared_path, 'w'))
     else:
-        new_shared = json.load(open(shared_path, 'r'))
+        new_shared = json.load(open(shared_path, 'wr+'))
         for key, val in new_shared.items():
             shared[key] = val
 
@@ -220,7 +229,7 @@ def read_data(config, data_type, ref, data_filter=None):
         new_emb_mat = np.array([idx2vec_dict[idx] for idx in range(len(idx2vec_dict))], dtype='float32')
         shared['new_emb_mat'] = new_emb_mat
 
-    data_set = DataSet(data, data_type, shared=shared, valid_idxs=valid_idxs)
+    data_set = DataSet(data, dataset, shared=shared, valid_idxs=valid_idxs)
     return data_set
 
 
@@ -314,3 +323,4 @@ def update_config(config, data_sets):
     if config.squash:
         config.max_sent_size = config.max_para_size
         config.max_num_sents = 1
+#%%

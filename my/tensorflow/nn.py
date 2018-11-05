@@ -1,9 +1,55 @@
-from tensorflow.python.ops.rnn_cell import _linear
+#from tensorflow.python.ops.rnn_cell_impl import _linear
 from tensorflow.python.util import nest
 import tensorflow as tf
 
 from my.tensorflow import flatten, reconstruct, add_wd, exp_mask
 
+def _linear(input_, output_size, scope=None):
+    '''
+    Linear map: output[k] = sum_i(Matrix[k, i] * args[i] ) + Bias[k]
+    Args:
+        args: a tensor or a list of 2D, batch x n, Tensors.
+    output_size: int, second dimension of W[i].
+    scope: VariableScope for the created subgraph; defaults to "Linear".
+    Returns:
+    A 2D Tensor with shape [batch x output_size] equal to
+    sum_i(args[i] * W[i]), where W[i]s are newly created matrices.
+    Raises:
+    ValueError: if some of the arguments has unspecified or wrong shape.
+    '''
+
+    shape = input_.get_shape().as_list()
+    if len(shape) != 2:
+        raise ValueError("Linear is expecting 2D arguments: %s" % str(shape))
+    if not shape[1]:
+        raise ValueError("Linear expects shape[1] of arguments: %s" % str(shape))
+    input_size = shape[1]
+
+    # Now the computation.
+    with tf.variable_scope(scope or "SimpleLinear"):
+        matrix = tf.get_variable("Matrix", [output_size, input_size], dtype=input_.dtype)
+        bias_term = tf.get_variable("Bias", [output_size], dtype=input_.dtype)
+
+    return tf.matmul(input_, tf.transpose(matrix)) + bias_term
+
+
+def highway(input_, size, num_layers=1, bias=-2.0, f=tf.nn.relu, scope='Highway'):
+    """Highway Network (cf. http://arxiv.org/abs/1505.00387).
+    t = sigmoid(Wy + b)
+    z = t * g(Wy + b) + (1 - t) * y
+    where g is nonlinearity, t is transform gate, and (1 - t) is carry gate.
+    """
+
+    with tf.variable_scope(scope):
+        for idx in range(num_layers):
+            g = f(linear(input_, size, scope='highway_lin_%d' % idx))
+
+            t = tf.sigmoid(linear(input_, size, scope='highway_gate_%d' % idx) + bias)
+
+            output = t * g + (1. - t) * input_
+            input_ = output
+
+    return output
 
 def linear(args, output_size, bias, bias_start=0.0, scope=None, squeeze=False, wd=0.0, input_keep_prob=1.0,
            is_train=None):

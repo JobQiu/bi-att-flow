@@ -84,6 +84,9 @@ flags.DEFINE_integer("max_sent_size", 400, "")
 flags.DEFINE_integer("max_ques_size", 30, "")
 flags.DEFINE_integer("max_word_size", 16, "")
 flags.DEFINE_integer("max_para_size", 256, "")
+flags.DEFINE_integer("char_vocab_size", 50, "")
+flags.DEFINE_integer("word_emb_size", 100, "")
+flags.DEFINE_integer("word_vocab_size", 100000, "")
 
 # Advanced training options
 flags.DEFINE_bool("lower_word", True, "lower word [True]")

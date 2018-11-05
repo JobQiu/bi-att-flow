@@ -112,6 +112,8 @@ flags.DEFINE_string("log_dir", "", "")
 flags.DEFINE_string("eval_dir", "", "")
 flags.DEFINE_string("answer_dir", "", "")
 
+flags.DEFINE_multi_float("emb_mat", None, "")
+
 
 def main(_):
     config = flags.FLAGS

@@ -8,7 +8,6 @@ from collections import Counter
 
 from tqdm import tqdm
 
-from config.configuration import Config
 from squad.utils import get_word_span, get_word_idx, process_tokens
 
 
@@ -19,8 +18,8 @@ def main():
 
 def get_args():
     parser = argparse.ArgumentParser()
-    target_dir = Config.squadLocation
-    glove_dir = Config.gloveLocation  # os.path.join(home, "data", "glove")
+    target_dir = "/content/bi-att-flow/data/squad"
+    glove_dir = "/content/bi-att-flow/data/glove"  # os.path.join(home, "data", "glove")
     parser.add_argument('-s', "--source_dir", default=target_dir)
     parser.add_argument('-t', "--target_dir", default=target_dir)
     parser.add_argument('-d', "--debug", action='store_true')

@@ -79,6 +79,12 @@ flags.DEFINE_integer("ques_size_th", 30, "ques size th [32]")
 flags.DEFINE_integer("word_size_th", 16, "word size th [16]")
 flags.DEFINE_integer("para_size_th", 256, "para size th [256]")
 
+flags.DEFINE_integer("max_num_sents", 8, "")
+flags.DEFINE_integer("max_sent_size", 400, "")
+flags.DEFINE_integer("max_ques_size", 30, "")
+flags.DEFINE_integer("max_word_size", 16, "")
+flags.DEFINE_integer("max_para_size", 256, "")
+
 # Advanced training options
 flags.DEFINE_bool("lower_word", True, "lower word [True]")
 flags.DEFINE_bool("squash", False, "squash the sentences into one? [False]")

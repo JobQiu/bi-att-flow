@@ -214,6 +214,8 @@ def prepro_each(args, data_type, start_ratio=0.0, stop_ratio=1.0, out_name="defa
                     i1 = get_word_idx(context, list_of_wordlist, (yi1[0], yi1[1] - 1))
                     cyi0 = answer_start - i0
                     cyi1 = answer_stop - i1 - 1
+                    if article_index == 257 and paragraph_index == 4:
+                        print("")
                     # print(answer_text, w0[cyi0:], w1[:cyi1+1])
                     assert answer_text[0] == w0[cyi0], (answer_text, w0, cyi0)
                     assert answer_text[-1] == w1[cyi1]

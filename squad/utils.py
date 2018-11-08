@@ -2,6 +2,12 @@ import re
 
 
 def get_2d_spans(text, tokenss):
+    """
+
+    :param text:
+    :param tokenss:
+    :return: the start and end index of each token, aka, each words
+    """
     spanss = []
     cur_idx = 0
     for tokens in tokenss:
@@ -19,13 +25,27 @@ def get_2d_spans(text, tokenss):
 
 
 def get_word_span(context, wordss, start, stop):
+    """
+    :param context: a string of this context
+    :param wordss: the list of words of this context
+    :param start: the start index of the answer
+    :param stop: the end index of the answer
+    :return: a list of tuple, [[0,108], [0,109], [0,110]],0
+     0 means the index of the sentence, 108 is the index of the words
+     for example, context[start:stop] = 'Saint Bernadette Soubirous'
+     108, 109, 110 is the index of these three words
+     finally return (0,108) and (0,110+1)
+     [),
+    """
     spanss = get_2d_spans(context, wordss)
     idxs = []
     for sent_idx, spans in enumerate(spanss):
+        # for each sentence or maybe paragraph
         for word_idx, span in enumerate(spans):
+            # for each word span in this sentence
             if not (stop <= span[0] or start >= span[1]):
                 idxs.append((sent_idx, word_idx))
-
+                # if the word is in this sentence, store the sentenceid and word id to the idxs
     assert len(idxs) > 0, "{} {} {} {}".format(context, spanss, start, stop)
     return idxs[0], (idxs[-1][0], idxs[-1][1] + 1)
 
@@ -104,9 +124,7 @@ def get_span_score_pairs(ypi, yp2i):
     for f, (ypif, yp2if) in enumerate(zip(ypi, yp2i)):
         for j in range(len(ypif)):
             for k in range(j, len(yp2if)):
-                span = ((f, j), (f, k+1))
+                span = ((f, j), (f, k + 1))
                 score = ypif[j] * yp2if[k]
                 span_score_pairs.append((span, score))
     return span_score_pairs
-
-

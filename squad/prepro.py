@@ -18,8 +18,8 @@ def main():
 
 def get_args():
     parser = argparse.ArgumentParser()
-    target_dir = "/content/bi-att-flow/data/squad"
-    glove_dir = "/content/bi-att-flow/data/glove"  # os.path.join(home, "data", "glove")
+    target_dir = "/Users/xavier.qiu/Documents/GitHub/bi-att-flow/data/squad"
+    glove_dir = "/Users/xavier.qiu/Documents/GitHub/bi-att-flow/data/glove"  # os.path.join(home, "data", "glove")
     parser.add_argument('-s', "--source_dir", default=target_dir)
     parser.add_argument('-t', "--target_dir", default=target_dir)
     parser.add_argument('-d', "--debug", action='store_true')
@@ -33,17 +33,19 @@ def get_args():
     parser.add_argument("--url", default="vision-server2.corp.ai2", type=str)
     parser.add_argument("--port", default=8000, type=int)
     parser.add_argument("--split", action='store_true')
+    parser.add_argument("--version", default="1.1", action='store_true')
+
     # TODO : put more args here
     return parser.parse_args()
 
 
 def create_all(args):
-    out_path = os.path.join(args.source_dir, "all-v1.1.json")
+    out_path = os.path.join(args.source_dir, "all-v" + args.version + ".json")
     if os.path.exists(out_path):
         return
-    train_path = os.path.join(args.source_dir, "train-v1.1.json")
+    train_path = os.path.join(args.source_dir, "train-v" + args.version + ".json")
     train_data = json.load(open(train_path, 'r'))
-    dev_path = os.path.join(args.source_dir, "dev-v1.1.json")
+    dev_path = os.path.join(args.source_dir, "dev-v" + args.version + ".json")
     dev_data = json.load(open(dev_path, 'r'))
     train_data['data'].extend(dev_data['data'])
     print("dumping all data ...")
@@ -73,6 +75,14 @@ def prepro(args):
 
 
 def save(args, data, shared, data_type):
+    """
+
+    :param args:
+    :param data:
+    :param shared:
+    :param data_type: train or dev
+    :return:
+    """
     data_path = os.path.join(args.target_dir, "data_{}.json".format(data_type))
     shared_path = os.path.join(args.target_dir, "shared_{}.json".format(data_type))
     json.dump(data, open(data_path, 'w'))
@@ -104,6 +114,16 @@ def get_word2vec(args, word_counter):
 
 
 def prepro_each(args, data_type, start_ratio=0.0, stop_ratio=1.0, out_name="default", in_path=None):
+    """
+
+    :param args: configurations
+    :param data_type: train or dev
+    :param start_ratio:
+    :param stop_ratio:
+    :param out_name: train, dev, test
+    :param in_path:
+    :return:
+    """
     if args.tokenizer == "PTB":
         import nltk
         sent_tokenize = nltk.sent_tokenize
@@ -121,8 +141,10 @@ def prepro_each(args, data_type, start_ratio=0.0, stop_ratio=1.0, out_name="defa
     if not args.split:
         sent_tokenize = lambda para: [para]
 
-    source_path = in_path or os.path.join(args.source_dir, "{}-v1.1.json".format(data_type))
+    # 1. load data
+    source_path = in_path or os.path.join(args.source_dir, "{}-v{}.json".format(data_type, args.version))
     source_data = json.load(open(source_path, 'r'))
+    # load the train  data or dev 1.1 dataset
 
     q, cq, y, rx, rcx, ids, idxs = [], [], [], [], [], [], []
     cy = []
@@ -130,59 +152,66 @@ def prepro_each(args, data_type, start_ratio=0.0, stop_ratio=1.0, out_name="defa
     answerss = []
     p = []
     word_counter, char_counter, lower_word_counter = Counter(), Counter(), Counter()
-    start_ai = int(round(len(source_data['data']) * start_ratio))
-    stop_ai = int(round(len(source_data['data']) * stop_ratio))
-    for ai, article in enumerate(tqdm(source_data['data'][start_ai:stop_ai])):
+    start_at_index = int(round(len(source_data['data']) * start_ratio))
+    stop_at_index = int(round(len(source_data['data']) * stop_ratio))
+
+    # for each article
+    for article_index, article in enumerate(tqdm(source_data['data'][start_at_index:stop_at_index])):
         xp, cxp = [], []
         pp = []
         x.append(xp)
         cx.append(cxp)
         p.append(pp)
-        for pi, para in enumerate(article['paragraphs']):
+
+        # for each paragrph of the article
+        for paragraph_index, paragraph in enumerate(article['paragraphs']):
             # wordss
-            context = para['context']
+            context = paragraph['context']
             context = context.replace("''", '" ')
             context = context.replace("``", '" ')
-            xi = list(map(word_tokenize, sent_tokenize(context)))
-            xi = [process_tokens(tokens) for tokens in xi]  # process tokens
+            list_of_wordlist = list(map(word_tokenize, sent_tokenize(context)))
+            list_of_wordlist = [process_tokens(tokens) for tokens in list_of_wordlist]  # process tokens
+            # xi are words
             # given xi, add chars
-            cxi = [[list(xijk) for xijk in xij] for xij in xi]
-            xp.append(xi)
-            cxp.append(cxi)
+            list_of_charlist = [[list(word) for word in word_list] for word_list in list_of_wordlist]
+            # cxi are characters for each words
+            xp.append(list_of_wordlist)
+            cxp.append(list_of_charlist)
             pp.append(context)
 
-            for xij in xi:
-                for xijk in xij:
-                    word_counter[xijk] += len(para['qas'])
-                    lower_word_counter[xijk.lower()] += len(para['qas'])
-                    for xijkl in xijk:
-                        char_counter[xijkl] += len(para['qas'])
+            # update the counter to plus the number of questions
+            for wordlist in list_of_wordlist:
+                for word in wordlist:
+                    word_counter[word] += len(paragraph['qas'])
+                    lower_word_counter[word.lower()] += len(paragraph['qas'])
+                    for char in word:
+                        char_counter[char] += len(paragraph['qas'])
 
-            rxi = [ai, pi]
-            assert len(x) - 1 == ai
-            assert len(x[ai]) - 1 == pi
-            for qa in para['qas']:
+            rxi = [article_index, paragraph_index]
+            assert len(x) - 1 == article_index
+            assert len(x[article_index]) - 1 == paragraph_index
+            for question in paragraph['qas']:
                 # get words
-                qi = word_tokenize(qa['question'])
-                cqi = [list(qij) for qij in qi]
+                question_wordslist = word_tokenize(question['question'])
+                question_charslist = [list(qij) for qij in question_wordslist]
                 yi = []
                 cyi = []
                 answers = []
-                for answer in qa['answers']:
+                for answer in question['answers']:
                     answer_text = answer['text']
                     answers.append(answer_text)
                     answer_start = answer['answer_start']
                     answer_stop = answer_start + len(answer_text)
                     # TODO : put some function that gives word_start, word_stop here
-                    yi0, yi1 = get_word_span(context, xi, answer_start, answer_stop)
+                    yi0, yi1 = get_word_span(context, list_of_wordlist, answer_start, answer_stop)
                     # yi0 = answer['answer_word_start'] or [0, 0]
                     # yi1 = answer['answer_word_stop'] or [0, 1]
-                    assert len(xi[yi0[0]]) > yi0[1]
-                    assert len(xi[yi1[0]]) >= yi1[1]
-                    w0 = xi[yi0[0]][yi0[1]]
-                    w1 = xi[yi1[0]][yi1[1] - 1]
-                    i0 = get_word_idx(context, xi, yi0)
-                    i1 = get_word_idx(context, xi, (yi1[0], yi1[1] - 1))
+                    assert len(list_of_wordlist[yi0[0]]) > yi0[1]
+                    assert len(list_of_wordlist[yi1[0]]) >= yi1[1]
+                    w0 = list_of_wordlist[yi0[0]][yi0[1]]
+                    w1 = list_of_wordlist[yi1[0]][yi1[1] - 1]
+                    i0 = get_word_idx(context, list_of_wordlist, yi0)
+                    i1 = get_word_idx(context, list_of_wordlist, (yi1[0], yi1[1] - 1))
                     cyi0 = answer_start - i0
                     cyi1 = answer_stop - i1 - 1
                     # print(answer_text, w0[cyi0:], w1[:cyi1+1])
@@ -194,19 +223,19 @@ def prepro_each(args, data_type, start_ratio=0.0, stop_ratio=1.0, out_name="defa
                     yi.append([yi0, yi1])
                     cyi.append([cyi0, cyi1])
 
-                for qij in qi:
+                for qij in question_wordslist:
                     word_counter[qij] += 1
                     lower_word_counter[qij.lower()] += 1
                     for qijk in qij:
                         char_counter[qijk] += 1
 
-                q.append(qi)
-                cq.append(cqi)
+                q.append(question_wordslist)
+                cq.append(question_charslist)
                 y.append(yi)
                 cy.append(cyi)
                 rx.append(rxi)
                 rcx.append(rxi)
-                ids.append(qa['id'])
+                ids.append(question['id'])
                 idxs.append(len(idxs))
                 answerss.append(answers)
 
@@ -217,11 +246,29 @@ def prepro_each(args, data_type, start_ratio=0.0, stop_ratio=1.0, out_name="defa
     lower_word2vec_dict = get_word2vec(args, lower_word_counter)
 
     # add context here
-    data = {'q': q, 'cq': cq, 'y': y, '*x': rx, '*cx': rcx, 'cy': cy,
-            'idxs': idxs, 'ids': ids, 'answerss': answerss, '*p': rx}
-    shared = {'x': x, 'cx': cx, 'p': p,
-              'word_counter': word_counter, 'char_counter': char_counter, 'lower_word_counter': lower_word_counter,
-              'word2vec': word2vec_dict, 'lower_word2vec': lower_word2vec_dict}
+    data = {
+        'q': q,  # list of word list of each questions, [['who','are', 'you'], ... ]
+        'cq': cq,
+        # [<class 'list'>: [['T', 'o'], ['w', 'h', 'o', 'm'], ['d', 'i', 'd'], ['t', 'h', 'e'], ['V', 'i', 'r', 'g', 'i', 'n'], ['M', 'a', 'r', 'y'], ['a', 'l', 'l', 'e', 'g', 'e', 'd', 'l', 'y'], ['a', 'p', 'p', 'e', 'a', 'r'], ['i', 'n'], ['1', '8', '5', '8'], ['i', 'n'], ['L', 'o', 'u', 'r', 'd', 'e', 's'], ['F', 'r', 'a', 'n', 'c', 'e'], ['?']] , ...]
+        'y': y,  # list of <class 'list'>: [[(0, 108), (0, 111)]]
+        '*x': rx,  # list of <class 'list'>: [0, 21], 0 means the number of article, 21 means the 21st paragraph
+        '*cx': rcx,  # same with rx but for characters, i guess the values are same as well
+        'cy': cy,  #
+        'idxs': idxs,  # just those ids
+        'ids': ids,  # the id of each question, sth like uuid
+        'answerss': answerss,  # the content of the answer
+        '*p': rx  #
+    }
+    shared = {
+        'x': x,  # words of each paragraph
+        'cx': cx,  # characters of each
+        'p': p,  # the content of each paragraph
+        'word_counter': word_counter,
+        'char_counter': char_counter,
+        'lower_word_counter': lower_word_counter,
+        'word2vec': word2vec_dict,
+        'lower_word2vec': lower_word2vec_dict
+    }
 
     print("saving ...")
     save(args, data, shared, out_name)

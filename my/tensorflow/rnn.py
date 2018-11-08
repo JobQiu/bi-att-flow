@@ -47,16 +47,36 @@ def bidirectional_dynamic_rnn(cell_fw, cell_bw, inputs, sequence_length=None,
                               initial_state_fw=None, initial_state_bw=None,
                               dtype=None, parallel_iterations=None,
                               swap_memory=False, time_major=False, scope=None):
+    """
+
+    :param cell_fw:
+    :param cell_bw:
+    :param inputs:
+    :param sequence_length:
+    :param initial_state_fw:
+    :param initial_state_bw:
+    :param dtype:
+    :param parallel_iterations:
+    :param swap_memory:
+    :param time_major:
+    :param scope:
+    :return: the hidden for each state, both direction, and final state for both direction
+    """
     assert not time_major
 
     flat_inputs = flatten(inputs, 2)  # [-1, J, d]
     flat_len = None if sequence_length is None else tf.cast(flatten(sequence_length, 0), 'int64')
 
     (flat_fw_outputs, flat_bw_outputs), final_state = \
-        _bidirectional_dynamic_rnn(cell_fw, cell_bw, flat_inputs, sequence_length=flat_len,
-                                   initial_state_fw=initial_state_fw, initial_state_bw=initial_state_bw,
-                                   dtype=dtype, parallel_iterations=parallel_iterations, swap_memory=swap_memory,
-                                   time_major=time_major, scope=scope)
+        _bidirectional_dynamic_rnn(cell_fw, cell_bw, flat_inputs,  # 200,
+                                   sequence_length=flat_len,  # question mark
+                                   initial_state_fw=initial_state_fw,
+                                   initial_state_bw=initial_state_bw,
+                                   dtype=dtype,
+                                   parallel_iterations=parallel_iterations,
+                                   swap_memory=swap_memory,
+                                   time_major=time_major,
+                                   scope=scope)
 
     fw_outputs = reconstruct(flat_fw_outputs, inputs, 2)
     bw_outputs = reconstruct(flat_bw_outputs, inputs, 2)
@@ -67,7 +87,6 @@ def bidirectional_dynamic_rnn(cell_fw, cell_bw, inputs, sequence_length=None,
 def bidirectional_rnn(cell_fw, cell_bw, inputs,
                       initial_state_fw=None, initial_state_bw=None,
                       dtype=None, sequence_length=None, scope=None):
-
     flat_inputs = flatten(inputs, 2)  # [-1, J, d]
     flat_len = None if sequence_length is None else tf.cast(flatten(sequence_length, 0), 'int64')
 

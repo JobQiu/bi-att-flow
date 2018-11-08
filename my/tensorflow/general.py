@@ -1,9 +1,8 @@
+from functools import reduce
 from itertools import zip_longest
+from operator import mul
 
 import tensorflow as tf
-from functools import reduce
-from operator import mul
-import numpy as np
 
 VERY_BIG_NUMBER = 1e30
 VERY_SMALL_NUMBER = 1e-30
@@ -13,6 +12,7 @@ VERY_NEGATIVE_NUMBER = -VERY_BIG_NUMBER
 
 def get_initializer(matrix):
     def _initializer(shape, dtype=None, partition_info=None, **kwargs): return matrix
+
     return _initializer
 
 
@@ -49,7 +49,7 @@ def variable_with_weight_decay(name, shape, stddev, wd):
       Variable Tensor
     """
     var = variable_on_cpu(name, shape,
-                           tf.truncated_normal_initializer(stddev=stddev))
+                          tf.truncated_normal_initializer(stddev=stddev))
     if wd:
         weight_decay = tf.mul(tf.nn.l2_loss(var), wd, name='weight_loss')
         tf.add_to_collection('losses', weight_decay)
@@ -83,7 +83,7 @@ def average_gradients(tower_grads):
             grads.append(expanded_g)
 
         # Average over the 'tower' dimension.
-        grad = tf.concat(0, grads)
+        grad = tf.concat(grads, 0)
         grad = tf.reduce_mean(grad, 0)
 
         # Keep in mind that the Variables are redundant because they are shared
@@ -155,13 +155,14 @@ def grouper(iterable, n, fillvalue=None, shorten=False, num_groups=None):
     out = zip_longest(*args, fillvalue=fillvalue)
     out = list(out)
     if num_groups is not None:
-        default = (fillvalue, ) * n
+        default = (fillvalue,) * n
         assert isinstance(num_groups, int)
         out = list(each for each, _ in zip_longest(out, range(num_groups), fillvalue=default))
     if shorten:
         assert fillvalue is None
         out = (tuple(e for e in each if e is not None) for each in out)
     return out
+
 
 def padded_reshape(tensor, shape, mode='CONSTANT', name=None):
     paddings = [[0, shape[i] - tf.shape(tensor)[i]] for i in range(len(shape))]

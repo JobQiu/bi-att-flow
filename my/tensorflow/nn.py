@@ -1,36 +1,10 @@
-#from tensorflow.python.ops.rnn_cell_impl import _linear
-from tensorflow.python.util import nest
 import tensorflow as tf
+from tensorflow.contrib.rnn.python.ops.rnn_cell import core_rnn_cell
+from tensorflow.python.util import nest
+
+_linear = core_rnn_cell._linear
 
 from my.tensorflow import flatten, reconstruct, add_wd, exp_mask
-
-def _linear(input_, output_size, scope=None):
-    '''
-    Linear map: output[k] = sum_i(Matrix[k, i] * args[i] ) + Bias[k]
-    Args:
-        args: a tensor or a list of 2D, batch x n, Tensors.
-    output_size: int, second dimension of W[i].
-    scope: VariableScope for the created subgraph; defaults to "Linear".
-    Returns:
-    A 2D Tensor with shape [batch x output_size] equal to
-    sum_i(args[i] * W[i]), where W[i]s are newly created matrices.
-    Raises:
-    ValueError: if some of the arguments has unspecified or wrong shape.
-    '''
-
-    shape = input_.get_shape().as_list()
-    if len(shape) != 2:
-        raise ValueError("Linear is expecting 2D arguments: %s" % str(shape))
-    if not shape[1]:
-        raise ValueError("Linear expects shape[1] of arguments: %s" % str(shape))
-    input_size = shape[1]
-
-    # Now the computation.
-    with tf.variable_scope(scope or "SimpleLinear"):
-        matrix = tf.get_variable("Matrix", [output_size, input_size], dtype=input_.dtype)
-        bias_term = tf.get_variable("Bias", [output_size], dtype=input_.dtype)
-
-    return tf.matmul(input_, tf.transpose(matrix)) + bias_term
 
 
 def highway(input_, size, num_layers=1, bias=-2.0, f=tf.nn.relu, scope='Highway'):
@@ -51,6 +25,7 @@ def highway(input_, size, num_layers=1, bias=-2.0, f=tf.nn.relu, scope='Highway'
 
     return output
 
+
 def linear(args, output_size, bias, bias_start=0.0, scope=None, squeeze=False, wd=0.0, input_keep_prob=1.0,
            is_train=None):
     if args is None or (nest.is_sequence(args) and not args):
@@ -63,10 +38,12 @@ def linear(args, output_size, bias, bias_start=0.0, scope=None, squeeze=False, w
         assert is_train is not None
         flat_args = [tf.cond(is_train, lambda: tf.nn.dropout(arg, input_keep_prob), lambda: arg)
                      for arg in flat_args]
-    flat_out = _linear(flat_args, output_size, bias, bias_start=bias_start, scope=scope)
+
+    with tf.variable_scope(scope or 'Linear'):
+        flat_out = _linear(flat_args, output_size, bias, bias_initializer=tf.constant_initializer(bias_start))
     out = reconstruct(flat_out, args[0], 1)
     if squeeze:
-        out = tf.squeeze(out, [len(args[0].get_shape().as_list())-1])
+        out = tf.squeeze(out, [len(args[0].get_shape().as_list()) - 1])
     if wd:
         add_wd(wd)
 
@@ -109,7 +86,8 @@ def softsel(target, logits, mask=None, scope=None):
         return out
 
 
-def double_linear_logits(args, size, bias, bias_start=0.0, scope=None, mask=None, wd=0.0, input_keep_prob=1.0, is_train=None):
+def double_linear_logits(args, size, bias, bias_start=0.0, scope=None, mask=None, wd=0.0, input_keep_prob=1.0,
+                         is_train=None):
     with tf.variable_scope(scope or "Double_Linear_Logits"):
         first = tf.tanh(linear(args, size, bias, bias_start=bias_start, scope='first',
                                wd=wd, input_keep_prob=input_keep_prob, is_train=is_train))
@@ -136,22 +114,25 @@ def sum_logits(args, mask=None, name=None):
         if not nest.is_sequence(args):
             args = [args]
         rank = len(args[0].get_shape())
-        logits = sum(tf.reduce_sum(arg, rank-1) for arg in args)
+        logits = sum(tf.reduce_sum(arg, rank - 1) for arg in args)
         if mask is not None:
             logits = exp_mask(logits, mask)
         return logits
 
 
-def get_logits(args, size, bias, bias_start=0.0, scope=None, mask=None, wd=0.0, input_keep_prob=1.0, is_train=None, func=None):
+def get_logits(args, size, bias, bias_start=0.0, scope=None, mask=None, wd=0.0, input_keep_prob=1.0, is_train=None,
+               func=None):
     if func is None:
         func = "sum"
     if func == 'sum':
         return sum_logits(args, mask=mask, name=scope)
     elif func == 'linear':
-        return linear_logits(args, bias, bias_start=bias_start, scope=scope, mask=mask, wd=wd, input_keep_prob=input_keep_prob,
+        return linear_logits(args, bias, bias_start=bias_start, scope=scope, mask=mask, wd=wd,
+                             input_keep_prob=input_keep_prob,
                              is_train=is_train)
     elif func == 'double':
-        return double_linear_logits(args, size, bias, bias_start=bias_start, scope=scope, mask=mask, wd=wd, input_keep_prob=input_keep_prob,
+        return double_linear_logits(args, size, bias, bias_start=bias_start, scope=scope, mask=mask, wd=wd,
+                                    input_keep_prob=input_keep_prob,
                                     is_train=is_train)
     elif func == 'dot':
         assert len(args) == 2
@@ -160,7 +141,8 @@ def get_logits(args, size, bias, bias_start=0.0, scope=None, mask=None, wd=0.0, 
     elif func == 'mul_linear':
         assert len(args) == 2
         arg = args[0] * args[1]
-        return linear_logits([arg], bias, bias_start=bias_start, scope=scope, mask=mask, wd=wd, input_keep_prob=input_keep_prob,
+        return linear_logits([arg], bias, bias_start=bias_start, scope=scope, mask=mask, wd=wd,
+                             input_keep_prob=input_keep_prob,
                              is_train=is_train)
     elif func == 'proj':
         assert len(args) == 2
@@ -171,7 +153,8 @@ def get_logits(args, size, bias, bias_start=0.0, scope=None, mask=None, wd=0.0, 
     elif func == 'tri_linear':
         assert len(args) == 2
         new_arg = args[0] * args[1]
-        return linear_logits([args[0], args[1], new_arg], bias, bias_start=bias_start, scope=scope, mask=mask, wd=wd, input_keep_prob=input_keep_prob,
+        return linear_logits([args[0], args[1], new_arg], bias, bias_start=bias_start, scope=scope, mask=mask, wd=wd,
+                             input_keep_prob=input_keep_prob,
                              is_train=is_train)
     else:
         raise Exception()
@@ -180,15 +163,29 @@ def get_logits(args, size, bias, bias_start=0.0, scope=None, mask=None, wd=0.0, 
 def highway_layer(arg, bias, bias_start=0.0, scope=None, wd=0.0, input_keep_prob=1.0, is_train=None):
     with tf.variable_scope(scope or "highway_layer"):
         d = arg.get_shape()[-1]
-        trans = linear([arg], d, bias, bias_start=bias_start, scope='trans', wd=wd, input_keep_prob=input_keep_prob, is_train=is_train)
+        trans = linear([arg], d, bias, bias_start=bias_start, scope='trans', wd=wd, input_keep_prob=input_keep_prob,
+                       is_train=is_train)
         trans = tf.nn.relu(trans)
-        gate = linear([arg], d, bias, bias_start=bias_start, scope='gate', wd=wd, input_keep_prob=input_keep_prob, is_train=is_train)
+        gate = linear([arg], d, bias, bias_start=bias_start, scope='gate', wd=wd, input_keep_prob=input_keep_prob,
+                      is_train=is_train)
         gate = tf.nn.sigmoid(gate)
         out = gate * trans + (1 - gate) * arg
         return out
 
 
 def highway_network(arg, num_layers, bias, bias_start=0.0, scope=None, wd=0.0, input_keep_prob=1.0, is_train=None):
+    """
+
+    :param arg:
+    :param num_layers:
+    :param bias:
+    :param bias_start:
+    :param scope:
+    :param wd:
+    :param input_keep_prob:
+    :param is_train:
+    :return:
+    """
     with tf.variable_scope(scope or "highway_network"):
         prev = arg
         cur = None
@@ -219,7 +216,13 @@ def multi_conv1d(in_, filter_sizes, heights, padding, is_train=None, keep_prob=1
         for filter_size, height in zip(filter_sizes, heights):
             if filter_size == 0:
                 continue
-            out = conv1d(in_, filter_size, height, padding, is_train=is_train, keep_prob=keep_prob, scope="conv1d_{}".format(height))
+            out = conv1d(in_,
+                         filter_size,
+                         height,
+                         padding,
+                         is_train=is_train,
+                         keep_prob=keep_prob,
+                         scope="conv1d_{}".format(height))
             outs.append(out)
-        concat_out = tf.concat(2, outs)
+        concat_out = tf.concat(outs, 2) # here just one kind of heights, so
         return concat_out

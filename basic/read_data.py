@@ -159,8 +159,8 @@ def read_data(config, dataset, ref, data_filter=None):
     """
 
     :param config: tf flags that store configurations
-    :param dataset: train,
-    :param ref: True, what does this mean,
+    :param dataset: train, or dev
+    :param ref: True, what does this mean, True, "load saved data? [True]"
     :param data_filter:
     :return:
     """
@@ -172,22 +172,24 @@ def read_data(config, dataset, ref, data_filter=None):
         shared = json.load(fh)
 
     num_examples = len(next(iter(data.values())))
-    if data_filter is None:
+    # what is num example, is it the number of articles or what.
+    # 130319, i don't know what is means, is this the number of quesitons, yes, it's the number of questions, for each question, it has a q,cq and so on
+    if data_filter is None: # if don't use data filter
         valid_idxs = range(num_examples)
     else:
         mask = []
-        keys = data.keys()
+        keys = data.keys() # q, cq and so on,
         values = data.values()
         for vals in zip(*values):
             each = {key: val for key, val in zip(keys, vals)}
             mask.append(data_filter(each, shared))
         valid_idxs = [idx for idx in range(len(mask)) if mask[idx]]
-
+    # valid_idxs might be 0 1 2 4 5 7 8, those missing value are invalid
     print("Loaded {}/{} examples from {}".format(len(valid_idxs), num_examples, dataset))
 
     shared_path = config.shared_path or os.path.join(config.out_dir, "shared.json")
 
-    if not ref:
+    if not os.path.isfile(shared_path) or not ref:
         word2vec_dict = shared['lower_word2vec'] if config.lower_word else shared['word2vec']
         word_counter = shared['lower_word_counter'] if config.lower_word else shared['word_counter']
         char_counter = shared['char_counter']
@@ -195,7 +197,7 @@ def read_data(config, dataset, ref, data_filter=None):
             shared['word2idx'] = {word: idx + 2 for idx, word in
                                   enumerate(word for word, count in word_counter.items()
                                             if count > config.word_count_th or (
-                                                        config.known_if_glove and word in word2vec_dict))}
+                                                    config.known_if_glove and word in word2vec_dict))}
         else:
             assert config.known_if_glove
             assert config.use_glove_for_unk
@@ -237,10 +239,18 @@ def read_data(config, dataset, ref, data_filter=None):
 
 def get_squad_data_filter(config):
     def data_filter(data_point, shared):
+        """
+
+        filter some samples we don't want, if it's too long, if the end is outside of the context
+
+        :param data_point: the example point, such as the question, the answer and so on
+        :param shared: shared informaitons, such as context
+        :return:
+        """
         assert shared is not None
         rx, rcx, q, cq, y = (data_point[key] for key in ('*x', '*cx', 'q', 'cq', 'y'))
         x, cx = shared['x'], shared['cx']
-        if len(q) > config.ques_size_th:
+        if len(q) > config.ques_size_th: # 30 here
             return False
 
         # x filter
@@ -261,7 +271,7 @@ def get_squad_data_filter(config):
             for start, stop in y:
                 if stop[0] >= config.num_sents_th:
                     return False
-                if start[0] != stop[0]:
+                if start[0] != stop[0]: # in the same sentence
                     return False
                 if stop[1] >= config.sent_size_th:
                     return False

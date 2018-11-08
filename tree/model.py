@@ -3,12 +3,12 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.python.ops.rnn_cell import BasicLSTMCell
 
-from my.nltk_utils import tree2matrix, find_max_f1_subtree, load_compressed_tree, set_span
-from tree.read_data import DataSet
+from my.nltk_utils import tree2matrix, find_max_f1_subtree, set_span
 from my.tensorflow import exp_mask, get_initializer
 from my.tensorflow.nn import linear
 from my.tensorflow.rnn import bidirectional_dynamic_rnn, dynamic_rnn
 from my.tensorflow.rnn_cell import SwitchableDropoutWrapper, NoOpCell, TreeRNNCell
+from tree.read_data import DataSet
 
 
 class Model(object):
@@ -44,7 +44,7 @@ class Model(object):
         self._build_loss()
 
         self.ema_op = self._get_ema_op()
-        self.summary = tf.merge_all_summaries()
+        self.summary = tf.summary.merge_all()
 
     def _build_forward(self):
         config = self.config
@@ -75,7 +75,8 @@ class Model(object):
 
         with tf.variable_scope("word_emb"):
             if config.mode == 'train':
-                word_emb_mat = tf.get_variable("word_emb_mat", dtype='float', shape=[VW, config.word_emb_size], initializer=get_initializer(config.emb_mat))
+                word_emb_mat = tf.get_variable("word_emb_mat", dtype='float', shape=[VW, config.word_emb_size],
+                                               initializer=get_initializer(config.emb_mat))
             else:
                 word_emb_mat = tf.get_variable("word_emb_mat", shape=[VW, config.word_emb_size], dtype='float')
             Ax = tf.nn.embedding_lookup(word_emb_mat, self.x)  # [N, M, JX, d]
@@ -83,8 +84,8 @@ class Model(object):
             # Ax = linear([Ax], d, False, scope='Ax_reshape')
             # Aq = linear([Aq], d, False, scope='Aq_reshape')
 
-        xx = tf.concat(3, [xxc, Ax])  # [N, M, JX, 2d]
-        qq = tf.concat(2, [qqc, Aq])  # [N, JQ, 2d]
+        xx = tf.concat([xxc, Ax], 3)  # [N, M, JX, 2d]
+        qq = tf.concat([qqc, Aq], 2)  # [N, JQ, 2d]
         D = d + config.word_emb_size
 
         with tf.variable_scope("pos_emb"):
@@ -97,19 +98,21 @@ class Model(object):
         q_len = tf.reduce_sum(tf.cast(q_mask, 'int32'), 1)  # [N]
 
         with tf.variable_scope("rnn"):
-            (fw_h, bw_h), _ = bidirectional_dynamic_rnn(cell, cell, xx, x_len, dtype='float', scope='start')  # [N, M, JX, 2d]
+            (fw_h, bw_h), _ = bidirectional_dynamic_rnn(cell, cell, xx, x_len, dtype='float',
+                                                        scope='start')  # [N, M, JX, 2d]
             tf.get_variable_scope().reuse_variables()
-            (fw_us, bw_us), (_, (fw_u, bw_u)) = bidirectional_dynamic_rnn(cell, cell, qq, q_len, dtype='float', scope='start')  # [N, J, d], [N, d]
+            (fw_us, bw_us), (_, (fw_u, bw_u)) = bidirectional_dynamic_rnn(cell, cell, qq, q_len, dtype='float',
+                                                                          scope='start')  # [N, J, d], [N, d]
             u = (fw_u + bw_u) / 2.0
             h = (fw_h + bw_h) / 2.0
 
         with tf.variable_scope("h"):
             no_op_cell = NoOpCell(D)
             tree_rnn_cell = TreeRNNCell(no_op_cell, d, tf.reduce_max)
-            initial_state = tf.reshape(h, [N*M*JX, D])  # [N*M*JX, D]
-            inputs = tf.concat(4, [Atx, tf.cast(self.tx_edge_mask, 'float')])  # [N, M, H, JX, d+JX]
-            inputs = tf.reshape(tf.transpose(inputs, [0, 1, 3, 2, 4]), [N*M*JX, H, d + JX])  # [N*M*JX, H, d+JX]
-            length = tf.reshape(tf.reduce_sum(tf.cast(tx_mask, 'int32'), 2), [N*M*JX])
+            initial_state = tf.reshape(h, [N * M * JX, D])  # [N*M*JX, D]
+            inputs = tf.concat([Atx, tf.cast(self.tx_edge_mask, 'float')], 4)  # [N, M, H, JX, d+JX]
+            inputs = tf.reshape(tf.transpose(inputs, [0, 1, 3, 2, 4]), [N * M * JX, H, d + JX])  # [N*M*JX, H, d+JX]
+            length = tf.reshape(tf.reduce_sum(tf.cast(tx_mask, 'int32'), 2), [N * M * JX])
             # length = tf.reshape(tf.reduce_sum(tf.cast(tf.transpose(tx_mask, [0, 1, 3, 2]), 'float'), 3), [-1])
             h, _ = dynamic_rnn(tree_rnn_cell, inputs, length, initial_state=initial_state)  # [N*M*JX, H, D]
             h = tf.transpose(tf.reshape(h, [N, M, JX, H, D]), [0, 1, 3, 2, 4])  # [N, M, H, JX, D]
@@ -130,7 +133,7 @@ class Model(object):
             self.logits, tf.cast(tf.reshape(self.y, [N, M * H * JX]), 'float')))
         tf.add_to_collection('losses', ce_loss)
         self.loss = tf.add_n(tf.get_collection('losses'), name='loss')
-        tf.scalar_summary(self.loss.op.name, self.loss)
+        tf.summary.scalar(self.loss.op.name, self.loss)
         tf.add_to_collection('ema/scalar', self.loss)
 
     def _get_ema_op(self):
@@ -138,10 +141,10 @@ class Model(object):
         ema_op = ema.apply(tf.get_collection("ema/scalar") + tf.get_collection("ema/histogram"))
         for var in tf.get_collection("ema/scalar"):
             ema_var = ema.average(var)
-            tf.scalar_summary(ema_var.op.name, ema_var)
+            tf.summary.scalar(ema_var.op.name, ema_var)
         for var in tf.get_collection("ema/histogram"):
             ema_var = ema.average(var)
-            tf.histogram_summary(ema_var.op.name, ema_var)
+            tf.summary.histogram(ema_var.op.name, ema_var)
         return ema_op
 
     def get_loss(self):

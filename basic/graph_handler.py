@@ -25,7 +25,7 @@ class GraphHandler(object):
             self._load(sess)
 
         if self.config.mode == 'train':
-            self.writer = tf.train.SummaryWriter(self.config.log_dir, graph=tf.get_default_graph())
+            self.writer = tf.summary.FileWriter(self.config.log_dir, graph=tf.get_default_graph())
 
     def save(self, sess, global_step=None):
         saver = tf.train.Saver(max_to_keep=self.config.max_to_keep)

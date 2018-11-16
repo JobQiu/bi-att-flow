@@ -28,12 +28,25 @@ def highway(input_, size, num_layers=1, bias=-2.0, f=tf.nn.relu, scope='Highway'
 
 def linear(args, output_size, bias, bias_start=0.0, scope=None, squeeze=False, wd=0.0, input_keep_prob=1.0,
            is_train=None):
+    """
+    output the same shape of the args/inputs,
+    :param args: here it's [60, ?, ?, 200] shape tensor
+    :param output_size: output size is same with args's final dimension, which is 200 here
+    :param bias: true,
+    :param bias_start: here it's 0
+    :param scope: trans, i don't know what this scope means,
+    :param squeeze: False, todo what'is this one?
+    :param wd: weight decay, 0 here
+    :param input_keep_prob: 1 here
+    :param is_train: place holder
+    :return:
+    """
     if args is None or (nest.is_sequence(args) and not args):
         raise ValueError("`args` must be specified")
     if not nest.is_sequence(args):
         args = [args]
 
-    flat_args = [flatten(arg, 1) for arg in args]
+    flat_args = [flatten(arg, 1) for arg in args]  # [60, ?, ?, 200] -> [?, 200]
     if input_keep_prob < 1.0:
         assert is_train is not None
         flat_args = [tf.cond(is_train, lambda: tf.nn.dropout(arg, input_keep_prob), lambda: arg)
@@ -72,7 +85,7 @@ def softmax(logits, mask=None, scope=None):
 
 def softsel(target, logits, mask=None, scope=None):
     """
-
+    weighted sum
     :param target: [ ..., J, d] dtype=float
     :param logits: [ ..., J], dtype=float
     :param mask: [ ..., J], dtype=bool
@@ -122,6 +135,20 @@ def sum_logits(args, mask=None, name=None):
 
 def get_logits(args, size, bias, bias_start=0.0, scope=None, mask=None, wd=0.0, input_keep_prob=1.0, is_train=None,
                func=None):
+    """
+
+    :param args: h_aug, and u_aug, context and question, shape [60, ?, ?, ?, 200]
+    :param size: None
+    :param bias: true
+    :param bias_start: 0,
+    :param scope: u_logits,
+    :param mask: hu_mask, shape = [batch_size,?,?,?]
+    :param wd: weught decay, =0 here
+    :param input_keep_prob: = 1 here
+    :param is_train: place holder
+    :param func: tri_linear
+    :return:
+    """
     if func is None:
         func = "sum"
     if func == 'sum':
@@ -152,7 +179,7 @@ def get_logits(args, size, bias, bias_start=0.0, scope=None, mask=None, wd=0.0, 
         return sum_logits([proj * args[1]], mask=mask)
     elif func == 'tri_linear':
         assert len(args) == 2
-        new_arg = args[0] * args[1]
+        new_arg = args[0] * args[1]  # same shape [60, ?,?,?, 200]
         return linear_logits([args[0], args[1], new_arg], bias, bias_start=bias_start, scope=scope, mask=mask, wd=wd,
                              input_keep_prob=input_keep_prob,
                              is_train=is_train)
@@ -161,8 +188,19 @@ def get_logits(args, size, bias, bias_start=0.0, scope=None, mask=None, wd=0.0, 
 
 
 def highway_layer(arg, bias, bias_start=0.0, scope=None, wd=0.0, input_keep_prob=1.0, is_train=None):
+    """
+
+    :param arg: for the first layer, it's [6 ? ? 200] tensor
+    :param bias: true
+    :param bias_start: 0
+    :param scope: layer_0, layer_1
+    :param wd: weight decay, 0 here
+    :param input_keep_prob: 1 here
+    :param is_train: a place holder
+    :return:
+    """
     with tf.variable_scope(scope or "highway_layer"):
-        d = arg.get_shape()[-1]
+        d = arg.get_shape()[-1]  # the dimension of the arg, here it's 200, the size of the embedding
         trans = linear([arg], d, bias, bias_start=bias_start, scope='trans', wd=wd, input_keep_prob=input_keep_prob,
                        is_train=is_train)
         trans = tf.nn.relu(trans)
@@ -176,14 +214,14 @@ def highway_layer(arg, bias, bias_start=0.0, scope=None, wd=0.0, input_keep_prob
 def highway_network(arg, num_layers, bias, bias_start=0.0, scope=None, wd=0.0, input_keep_prob=1.0, is_train=None):
     """
 
-    :param arg:
-    :param num_layers:
-    :param bias:
-    :param bias_start:
-    :param scope:
-    :param wd:
-    :param input_keep_prob:
-    :param is_train:
+    :param arg: 60, ?, ?, 200, seems to be the embeddings,
+    :param num_layers: 2 here,
+    :param bias: True or false, here it's true
+    :param bias_start: 0
+    :param scope:  None,
+    :param wd: weight decay, 0 here
+    :param input_keep_prob: 1 here
+    :param is_train: this one is a placeholder, I guess this will change during the situation
     :return:
     """
     with tf.variable_scope(scope or "highway_network"):
@@ -224,5 +262,5 @@ def multi_conv1d(in_, filter_sizes, heights, padding, is_train=None, keep_prob=1
                          keep_prob=keep_prob,
                          scope="conv1d_{}".format(height))
             outs.append(out)
-        concat_out = tf.concat(outs, 2) # here just one kind of heights, so
+        concat_out = tf.concat(outs, 2)  # here just one kind of heights, so
         return concat_out

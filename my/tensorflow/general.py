@@ -11,7 +11,8 @@ VERY_NEGATIVE_NUMBER = -VERY_BIG_NUMBER
 
 
 def get_initializer(matrix):
-    def _initializer(shape, dtype=None, partition_info=None, **kwargs): return matrix
+    def _initializer(shape, dtype=None, partition_info=None, **kwargs):
+        return matrix
 
     return _initializer
 
@@ -119,6 +120,12 @@ def exp_mask(val, mask, name=None):
 
 
 def flatten(tensor, keep):
+    """
+    [60, ?, ?, 200] -> [?, 200], when keep is 1
+    :param tensor: input for example, is [60,?,?,200]
+    :param keep: 1
+    :return:
+    """
     fixed_shape = tensor.get_shape().as_list()
     start = len(fixed_shape) - keep
     left = reduce(mul, [fixed_shape[i] or tf.shape(tensor)[i] for i in range(start)])
@@ -128,6 +135,13 @@ def flatten(tensor, keep):
 
 
 def reconstruct(tensor, ref, keep):
+    """
+    the inverse action of flatten
+    :param tensor:
+    :param ref:
+    :param keep:
+    :return:
+    """
     ref_shape = ref.get_shape().as_list()
     tensor_shape = tensor.get_shape().as_list()
     ref_stop = len(ref_shape) - keep
@@ -142,6 +156,12 @@ def reconstruct(tensor, ref, keep):
 
 
 def add_wd(wd, scope=None):
+    """
+
+    :param wd:
+    :param scope:
+    :return:
+    """
     scope = scope or tf.get_variable_scope().name
     variables = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope=scope)
     with tf.name_scope("weight_decay"):

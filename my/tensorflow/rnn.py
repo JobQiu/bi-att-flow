@@ -51,20 +51,20 @@ def bidirectional_dynamic_rnn(cell_fw, cell_bw, inputs, sequence_length=None,
 
     :param cell_fw:
     :param cell_bw:
-    :param inputs:
-    :param sequence_length:
+    :param inputs: [60, ? , 200]
+    :param sequence_length: shape = [60]
     :param initial_state_fw:
     :param initial_state_bw:
-    :param dtype:
+    :param dtype: float
     :param parallel_iterations:
-    :param swap_memory:
-    :param time_major:
-    :param scope:
+    :param swap_memory: false
+    :param time_major: false
+    :param scope: u1
     :return: the hidden for each state, both direction, and final state for both direction
     """
     assert not time_major
 
-    flat_inputs = flatten(inputs, 2)  # [-1, J, d]
+    flat_inputs = flatten(inputs, 2)  # [-1, J, d] [60, ?, 200]
     flat_len = None if sequence_length is None else tf.cast(flatten(sequence_length, 0), 'int64')
 
     (flat_fw_outputs, flat_bw_outputs), final_state = \

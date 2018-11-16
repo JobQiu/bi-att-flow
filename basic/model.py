@@ -156,7 +156,7 @@ class Model(object):
                                                        initializer=get_initializer(config.emb_mat))
                     else:
                         word_emb_mat = tf.get_variable("word_emb_mat", shape=[VW, dw], dtype='float')
-                    if config.use_glove_for_unk:
+                    if config.use_glove_for_unk:  # create a new word embedding or use the glove?
                         word_emb_mat = tf.concat([word_emb_mat, self.new_emb_mat], 0)
 
                 with tf.name_scope("word"):
@@ -185,7 +185,7 @@ class Model(object):
         d_cell = SwitchableDropoutWrapper(cell, self.is_train, input_keep_prob=config.input_keep_prob)
         x_len = tf.reduce_sum(tf.cast(self.x_mask, 'int32'), 2)  # [N, M], [60,?]
         q_len = tf.reduce_sum(tf.cast(self.q_mask, 'int32'), 1)  # [N] [60]
-
+        # masks are true and false, here, he sums up those truths,
         with tf.variable_scope("prepro"):
             (fw_u, bw_u), ((_, fw_u_f), (_, bw_u_f)) = bidirectional_dynamic_rnn(d_cell, d_cell, qq, q_len,
                                                                                  dtype='float',
@@ -204,7 +204,7 @@ class Model(object):
             self.tensor_dict['h'] = h  # [60, ?, ?, 200] for article
 
         with tf.variable_scope("main"):
-            if config.dynamic_att:
+            if config.dynamic_att:  # todo what is this dynamic attention.
                 p0 = h
                 u = tf.reshape(tf.tile(tf.expand_dims(u, 1), [1, M, 1, 1]), [N * M, JQ, 2 * d])
                 q_mask = tf.reshape(tf.tile(tf.expand_dims(self.q_mask, 1), [1, M, 1]), [N * M, JQ])
@@ -447,7 +447,7 @@ def bi_attention(config, is_train, h, u, h_mask=None, u_mask=None, scope=None, t
         JX = tf.shape(h)[2]
         M = tf.shape(h)[1]
         JQ = tf.shape(u)[1]
-        h_aug = tf.tile(tf.expand_dims(h, 3), [1, 1, 1, JQ, 1])
+        h_aug = tf.tile(tf.expand_dims(h, 3), [1, 1, 1, JQ, 1]) # tf expand dims 3 let it be [60, ?, ?, ?, 200], tile let it be
         u_aug = tf.tile(tf.expand_dims(tf.expand_dims(u, 1), 1), [1, M, JX, 1, 1])
         if h_mask is None:
             hu_mask = None
@@ -455,9 +455,9 @@ def bi_attention(config, is_train, h, u, h_mask=None, u_mask=None, scope=None, t
             h_mask_aug = tf.tile(tf.expand_dims(h_mask, 3), [1, 1, 1, JQ])
             u_mask_aug = tf.tile(tf.expand_dims(tf.expand_dims(u_mask, 1), 1), [1, M, JX, 1])
             hu_mask = h_mask_aug & u_mask_aug
-
-        u_logits = get_logits([h_aug, u_aug], None, True, wd=config.wd, mask=hu_mask,
-                              is_train=is_train, func=config.logit_func, scope='u_logits')  # [N, M, JX, JQ]
+        # equation 1.
+        u_logits = get_logits([h_aug, u_aug], None, True, wd=config.wd, mask=hu_mask, # equation 1
+                              is_train=is_train, func=config.logit_func, scope='u_logits')  # [N, M, JX, JQ] = [60,?,?,?]
         u_a = softsel(u_aug, u_logits)  # [N, M, JX, d]
         h_a = softsel(h, tf.reduce_max(u_logits, 3))  # [N, M, d]
         h_a = tf.tile(tf.expand_dims(h_a, 2), [1, 1, JX, 1])

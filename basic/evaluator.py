@@ -332,7 +332,16 @@ class F1Evaluator(LabeledEvaluator):
 
 
 class MultiGPUF1Evaluator(F1Evaluator):
+    """
+
+    """
     def __init__(self, config, models, tensor_dict=None):
+        """
+
+        :param config:
+        :param models:
+        :param tensor_dict:
+        """
         super(MultiGPUF1Evaluator, self).__init__(config, models[0], tensor_dict=tensor_dict)
         self.models = models
         with tf.name_scope("eval_concat"):
@@ -342,12 +351,22 @@ class MultiGPUF1Evaluator(F1Evaluator):
             self.loss = tf.add_n([model.loss for model in models])/len(models)
 
     def _split_batch(self, batches):
+        """
+
+        :param batches:
+        :return:
+        """
         idxs_list, data_sets = zip(*batches)
         idxs = sum(idxs_list, ())
         data_set = sum(data_sets, data_sets[0].get_empty())
         return idxs, data_set
 
     def _get_feed_dict(self, batches):
+        """
+
+        :param batches:
+        :return:
+        """
         feed_dict = {}
         for model, (_, data_set) in zip(self.models, batches):
             feed_dict.update(model.get_feed_dict(data_set, False))

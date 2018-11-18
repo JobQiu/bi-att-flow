@@ -15,13 +15,18 @@ class GraphHandler(object):
     def __init__(self, config, model):
         self.config = config
         self.model = model
-        self.saver = tf.train.Saver(max_to_keep=config.max_to_keep)
+        self.saver = tf.train.Saver(max_to_keep=config.max_to_keep) # 20, Maximum number of recent checkpoints to keep.Defaults to 5.
         self.writer = None
         self.save_path = os.path.join(config.save_dir, config.model_name)
 
     def initialize(self, sess):
+        """
+        load the parameter if
+        :param sess:
+        :return:
+        """
         sess.run(tf.initialize_all_variables())
-        if self.config.load:
+        if self.config.load: # if load, load the value from checkpoint
             self._load(sess)
 
         if self.config.mode == 'train':

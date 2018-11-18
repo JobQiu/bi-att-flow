@@ -40,8 +40,8 @@ class MultiGPUTrainer(object):
         self.config = config
         self.model = model
         self.opt = tf.train.GradientDescentOptimizer(config.init_lr)
-        self.var_list = model.get_var_list()
-        self.global_step = model.get_global_step()
+        self.var_list = model.get_var_list()  # it's none here
+        self.global_step = model.get_global_step()  # a placeholder
         self.summary = model.summary
         self.models = models
         losses = []
@@ -58,6 +58,13 @@ class MultiGPUTrainer(object):
         self.train_op = self.opt.apply_gradients(self.grads, global_step=self.global_step)
 
     def step(self, sess, batches, get_summary=False):
+        """
+        run one step and update loss and so on
+        :param sess:
+        :param batches:
+        :param get_summary:
+        :return:
+        """
         assert isinstance(sess, tf.Session)
         feed_dict = {}
         for batch, model in zip(batches, self.models):

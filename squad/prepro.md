@@ -1,3 +1,4 @@
+```py
 import argparse
 import json
 import os
@@ -276,3 +277,6 @@ def prepro_each(args, data_type, start_ratio=0.0, stop_ratio=1.0, out_name="defa
 
 if __name__ == "__main__":
     main()
+
+
+```

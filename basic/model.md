@@ -1,3 +1,5 @@
+```python
+
 import itertools
 import random
 
@@ -308,13 +310,6 @@ class Model(object):
         return self.var_list
 
     def get_feed_dict(self, batch, is_train, supervised=True):
-        """
-
-        :param batch:
-        :param is_train:
-        :param supervised:
-        :return:
-        """
         assert isinstance(batch, DataSet)
         config = self.config
         N, M, JX, JQ, VW, VC, d, W = \
@@ -352,7 +347,6 @@ class Model(object):
         q = np.zeros([N, JQ], dtype='int32')
         cq = np.zeros([N, JQ, W], dtype='int32')
         q_mask = np.zeros([N, JQ], dtype='bool')
-        # each word has a mask, what does this mask mean?
 
         feed_dict[self.x] = x
         feed_dict[self.x_mask] = x_mask
@@ -374,9 +368,9 @@ class Model(object):
             feed_dict[self.y2] = y2
 
             for i, (xi, cxi, yi) in enumerate(zip(X, CX, batch.data['y'])):
-                start_idx, stop_idx = random.choice(yi)  # why use random choice here?
-                j, k = start_idx  # j is the index of sentence, k is the start of the answer
-                j2, k2 = stop_idx  # k2 is the end index of the answer
+                start_idx, stop_idx = random.choice(yi)
+                j, k = start_idx
+                j2, k2 = stop_idx
                 if config.single:
                     X[i] = [xi[j]]
                     CX[i] = [cxi[j]]
@@ -451,26 +445,11 @@ class Model(object):
 
 
 def bi_attention(config, is_train, h, u, h_mask=None, u_mask=None, scope=None, tensor_dict=None):
-    """
-
-    :param config:
-    :param is_train:
-    :param h: 2d for each word in context
-    :param u: 2d for each word in query
-    :param h_mask:
-    :param u_mask:
-    :param scope:
-    :param tensor_dict:
-    :return: u_a: the weighted sum of query for each context word
-             h_a: the weighted sum of context, the weights are soft(max(relevance)),
-             and tiled to T 2d as well
-    """
     with tf.variable_scope(scope or "bi_attention"):
         JX = tf.shape(h)[2]
         M = tf.shape(h)[1]
         JQ = tf.shape(u)[1]
-        h_aug = tf.tile(tf.expand_dims(h, 3),
-                        [1, 1, 1, JQ, 1])  # tf expand dims 3 let it be [60, ?, ?, ?, 200], tile let it be
+        h_aug = tf.tile(tf.expand_dims(h, 3), [1, 1, 1, JQ, 1]) # tf expand dims 3 let it be [60, ?, ?, ?, 200], tile let it be
         u_aug = tf.tile(tf.expand_dims(tf.expand_dims(u, 1), 1), [1, M, JX, 1, 1])
         if h_mask is None:
             hu_mask = None
@@ -479,9 +458,8 @@ def bi_attention(config, is_train, h, u, h_mask=None, u_mask=None, scope=None, t
             u_mask_aug = tf.tile(tf.expand_dims(tf.expand_dims(u_mask, 1), 1), [1, M, JX, 1])
             hu_mask = h_mask_aug & u_mask_aug
         # equation 1.
-        u_logits = get_logits([h_aug, u_aug], None, True, wd=config.wd, mask=hu_mask,  # equation 1
-                              is_train=is_train, func=config.logit_func,
-                              scope='u_logits')  # [N, M, JX, JQ] = [60,?,?,?]
+        u_logits = get_logits([h_aug, u_aug], None, True, wd=config.wd, mask=hu_mask, # equation 1
+                              is_train=is_train, func=config.logit_func, scope='u_logits')  # [N, M, JX, JQ] = [60,?,?,?]
         u_a = softsel(u_aug, u_logits)  # [N, M, JX, d]
         h_a = softsel(h, tf.reduce_max(u_logits, 3))  # [N, M, d]
         h_a = tf.tile(tf.expand_dims(h_a, 2), [1, 1, JX, 1])
@@ -499,18 +477,6 @@ def bi_attention(config, is_train, h, u, h_mask=None, u_mask=None, scope=None, t
 
 
 def attention_layer(config, is_train, h, u, h_mask=None, u_mask=None, scope=None, tensor_dict=None):
-    """
-
-    :param config:
-    :param is_train:
-    :param h: 2d embedding for each word in context,
-    :param u: 2d embedding for each word in query,
-    :param h_mask:
-    :param u_mask:
-    :param scope:
-    :param tensor_dict:
-    :return: p0, [8d] embedding for each context words.
-    """
     with tf.variable_scope(scope or "attention_layer"):
         JX = tf.shape(h)[2]  # the length of sentence
         M = tf.shape(h)[1]  # the max number of sentences
@@ -524,3 +490,7 @@ def attention_layer(config, is_train, h, u, h_mask=None, u_mask=None, scope=None
         else:
             p0 = tf.concat([h, u_a, h * u_a], 3)
         return p0
+
+
+
+```

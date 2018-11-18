@@ -84,7 +84,7 @@ def _train(config):
     pprint(config.flag_values_dict(), indent=2)
     models = get_multi_gpu_models(config)
     model = models[0]
-    trainer = MultiGPUTrainer(config, models)
+    trainer = MultiGPUTrainer(config, models)  #
     evaluator = MultiGPUF1Evaluator(config, models, tensor_dict=model.tensor_dict if config.vis else None)
     graph_handler = GraphHandler(config,
                                  model)  # controls all tensors and variables in the graph, including loading /saving
@@ -97,8 +97,11 @@ def _train(config):
     num_steps = config.num_steps or int(
         math.ceil(train_data.num_examples / (config.batch_size * config.num_gpus))) * config.num_epochs
     global_step = 0
-    for batches in tqdm(train_data.get_multi_batches(config.batch_size, config.num_gpus,
-                                                     num_steps=num_steps, shuffle=True, cluster=config.cluster),
+    for batches in tqdm(train_data.get_multi_batches(batch_size=config.batch_size,
+                                                     num_batches_per_step=config.num_gpus,
+                                                     num_steps=num_steps,
+                                                     shuffle=True,
+                                                     cluster=config.cluster),
                         total=num_steps):
         global_step = sess.run(model.global_step) + 1  # +1 because all calculations are done after step
         get_summary = global_step % config.log_period == 0

@@ -125,7 +125,7 @@ class DataSet(object):
             data = self.data.get_empty()
         else:
             raise Exception()
-        return DataSet(data, self.data_type, shared=self.shared)
+        return DataSet(data, self.data_type, shared=self.shared)  # a small dataset with len = batch_size
 
     def __add__(self, other):
         if isinstance(self.data, dict):
@@ -174,11 +174,11 @@ def read_data(config, dataset, ref, data_filter=None):
     num_examples = len(next(iter(data.values())))
     # what is num example, is it the number of articles or what.
     # 130319, i don't know what is means, is this the number of quesitons, yes, it's the number of questions, for each question, it has a q,cq and so on
-    if data_filter is None: # if don't use data filter
+    if data_filter is None:  # if don't use data filter
         valid_idxs = range(num_examples)
     else:
         mask = []
-        keys = data.keys() # q, cq and so on,
+        keys = data.keys()  # q, cq and so on,
         values = data.values()
         for vals in zip(*values):
             each = {key: val for key, val in zip(keys, vals)}
@@ -250,7 +250,7 @@ def get_squad_data_filter(config):
         assert shared is not None
         rx, rcx, q, cq, y = (data_point[key] for key in ('*x', '*cx', 'q', 'cq', 'y'))
         x, cx = shared['x'], shared['cx']
-        if len(q) > config.ques_size_th: # 30 here
+        if len(q) > config.ques_size_th:  # 30 here
             return False
 
         # x filter
@@ -271,7 +271,7 @@ def get_squad_data_filter(config):
             for start, stop in y:
                 if stop[0] >= config.num_sents_th:
                     return False
-                if start[0] != stop[0]: # in the same sentence
+                if start[0] != stop[0]:  # in the same sentence
                     return False
                 if stop[1] >= config.sent_size_th:
                     return False
@@ -305,13 +305,14 @@ def update_config(config, data_sets):
     config.max_ques_size = 0
     config.max_word_size = 0
     config.max_para_size = 0
-    for data_set in data_sets: # train and dev
+    for data_set in data_sets:  # train and dev
         data = data_set.data
         shared = data_set.shared
         for idx in data_set.valid_idxs:
-            rx = data['*x'][idx] # [0,0] the first 0 means the index of the article, the second 0 means the index of paragraph
-            q = data['q'][idx] # words of the cur problem.
-            sents = shared['x'][rx[0]][rx[1]] # the
+            rx = data['*x'][
+                idx]  # [0,0] the first 0 means the index of the article, the second 0 means the index of paragraph
+            q = data['q'][idx]  # words of the cur problem.
+            sents = shared['x'][rx[0]][rx[1]]  # the
             config.max_para_size = max(config.max_para_size, sum(map(len, sents)))
             config.max_num_sents = max(config.max_num_sents, len(sents))
             config.max_sent_size = max(config.max_sent_size, max(map(len, sents)))

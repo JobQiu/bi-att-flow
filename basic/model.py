@@ -434,16 +434,20 @@ class Model(object):
                         if l == config.max_word_size:
                             break
                         cx[i, j, k, l] = _get_char(cxijkl)
-
+        max_len = config.max_ques_size
         for i, qi in enumerate(batch.data['q']):
             for j, qij in enumerate(qi):
                 if j >= config.max_ques_size:
+                    max_len = max(len(qi), max_len)
+                    send_msg("j is larger than the max len {}".format(max_len))
                     break
                 q[i, j] = _get_word(qij)
                 q_mask[i, j] = True
 
         for i, cqi in enumerate(batch.data['cq']):
             for j, cqij in enumerate(cqi):
+                if j >= config.max_ques_size:
+                    break
                 for k, cqijk in enumerate(cqij):
                     cq[i, j, k] = _get_char(cqijk)
                     if k + 1 == config.max_word_size:

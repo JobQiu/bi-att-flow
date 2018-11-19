@@ -23,8 +23,8 @@ flags.DEFINE_string("device_type", "gpu", "device for computing gradients (paral
 flags.DEFINE_integer("num_gpus", 1, "num of gpus or cpus for computing gradients [1]")
 
 # Essential training and test options
-flags.DEFINE_string("mode", "train", "train | test | forward [test]")
-flags.DEFINE_boolean("load", False, "load saved data? [True]")
+flags.DEFINE_string("mode", "test", "train | test | forward [test]")
+flags.DEFINE_boolean("load", True, "load saved data? [True]")
 flags.DEFINE_bool("single", False, "supervise only the answer sentence? [False]")
 flags.DEFINE_boolean("debug", False, "Debugging mode? [False]")
 flags.DEFINE_bool('load_ema', True, "load exponential average of variables when testing?  [True]")
@@ -80,13 +80,13 @@ flags.DEFINE_integer("word_size_th", 16, "word size th [16]")
 flags.DEFINE_integer("para_size_th", 256, "para size th [256]")
 
 flags.DEFINE_integer("max_num_sents", 8, "")
-flags.DEFINE_integer("max_sent_size", 400, "")
-flags.DEFINE_integer("max_ques_size", 30, "")
-flags.DEFINE_integer("max_word_size", 16, "")
+flags.DEFINE_integer("max_sent_size", 900, "")
+flags.DEFINE_integer("max_ques_size", 62, "")
+flags.DEFINE_integer("max_word_size", 35, "")
 flags.DEFINE_integer("max_para_size", 256, "")
-flags.DEFINE_integer("char_vocab_size", 50, "")
+flags.DEFINE_integer("char_vocab_size", 1400, "")
 flags.DEFINE_integer("word_emb_size", 100, "")
-flags.DEFINE_integer("word_vocab_size", 100000, "")
+flags.DEFINE_integer("word_vocab_size", 103505, "")
 
 # Advanced training options
 flags.DEFINE_bool("lower_word", True, "lower word [True]")

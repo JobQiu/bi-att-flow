@@ -61,7 +61,8 @@ class LabeledEvaluation(Evaluation):
         new_y = self.y + other.y
         new_idxs = self.idxs + other.idxs
         if self.tensor_dict is not None:
-            new_tensor_dict = {key: np.concatenate((val, other.tensor_dict[key]), axis=0) for key, val in self.tensor_dict.items()}
+            new_tensor_dict = {key: np.concatenate((val, other.tensor_dict[key]), axis=0) for key, val in
+                               self.tensor_dict.items()}
         return LabeledEvaluation(self.data_type, self.global_step, new_idxs, new_yp, new_y, tensor_dict=new_tensor_dict)
 
 
@@ -92,8 +93,10 @@ class AccuracyEvaluation(LabeledEvaluation):
         new_correct = self.correct + other.correct
         new_loss = (self.loss * self.num_examples + other.loss * other.num_examples) / len(new_correct)
         if self.tensor_dict is not None:
-            new_tensor_dict = {key: np.concatenate((val, other.tensor_dict[key]), axis=0) for key, val in self.tensor_dict.items()}
-        return AccuracyEvaluation(self.data_type, self.global_step, new_idxs, new_yp, new_y, new_correct, new_loss, tensor_dict=new_tensor_dict)
+            new_tensor_dict = {key: np.concatenate((val, other.tensor_dict[key]), axis=0) for key, val in
+                               self.tensor_dict.items()}
+        return AccuracyEvaluation(self.data_type, self.global_step, new_idxs, new_yp, new_y, new_correct, new_loss,
+                                  tensor_dict=new_tensor_dict)
 
 
 class Evaluator(object):
@@ -107,7 +110,8 @@ class Evaluator(object):
     def get_evaluation(self, sess, batch):
         idxs, data_set = batch
         feed_dict = self.model.get_feed_dict(data_set, False, supervised=False)
-        global_step, yp, vals = sess.run([self.global_step, self.yp, list(self.tensor_dict.values())], feed_dict=feed_dict)
+        global_step, yp, vals = sess.run([self.global_step, self.yp, list(self.tensor_dict.values())],
+                                         feed_dict=feed_dict)
         yp = yp[:data_set.num_examples]
         tensor_dict = dict(zip(self.tensor_dict.keys(), vals))
         e = Evaluation(data_set.data_type, int(global_step), idxs, yp.tolist(), tensor_dict=tensor_dict)
@@ -126,11 +130,13 @@ class LabeledEvaluator(Evaluator):
     def get_evaluation(self, sess, batch):
         idxs, data_set = batch
         feed_dict = self.model.get_feed_dict(data_set, False, supervised=False)
-        global_step, yp, vals = sess.run([self.global_step, self.yp, list(self.tensor_dict.values())], feed_dict=feed_dict)
+        global_step, yp, vals = sess.run([self.global_step, self.yp, list(self.tensor_dict.values())],
+                                         feed_dict=feed_dict)
         yp = yp[:data_set.num_examples]
         y = feed_dict[self.y]
         tensor_dict = dict(zip(self.tensor_dict.keys(), vals))
-        e = LabeledEvaluation(data_set.data_type, int(global_step), idxs, yp.tolist(), y.tolist(), tensor_dict=tensor_dict)
+        e = LabeledEvaluation(data_set.data_type, int(global_step), idxs, yp.tolist(), y.tolist(),
+                              tensor_dict=tensor_dict)
         return e
 
 
@@ -143,12 +149,14 @@ class AccuracyEvaluator(LabeledEvaluator):
         idxs, data_set = batch
         assert isinstance(data_set, DataSet)
         feed_dict = self.model.get_feed_dict(data_set, False)
-        global_step, yp, loss, vals = sess.run([self.global_step, self.yp, self.loss, list(self.tensor_dict.values())], feed_dict=feed_dict)
+        global_step, yp, loss, vals = sess.run([self.global_step, self.yp, self.loss, list(self.tensor_dict.values())],
+                                               feed_dict=feed_dict)
         y = data_set.data['y']
         yp = yp[:data_set.num_examples]
         correct = [self.__class__.compare(yi, ypi) for yi, ypi in zip(y, yp)]
         tensor_dict = dict(zip(self.tensor_dict.keys(), vals))
-        e = AccuracyEvaluation(data_set.data_type, int(global_step), idxs, yp.tolist(), y, correct, float(loss), tensor_dict=tensor_dict)
+        e = AccuracyEvaluation(data_set.data_type, int(global_step), idxs, yp.tolist(), y, correct, float(loss),
+                               tensor_dict=tensor_dict)
         return e
 
     @staticmethod
@@ -189,11 +197,14 @@ class ForwardEvaluation(Evaluation):
         new_yp2 = self.yp2 + other.yp2
         new_loss = (self.loss * self.num_examples + other.loss * other.num_examples) / len(new_yp)
         new_id2answer_dict = dict(list(self.id2answer_dict.items()) + list(other.id2answer_dict.items()))
-        new_id2score_dict = dict(list(self.id2answer_dict['scores'].items()) + list(other.id2answer_dict['scores'].items()))
+        new_id2score_dict = dict(
+            list(self.id2answer_dict['scores'].items()) + list(other.id2answer_dict['scores'].items()))
         new_id2answer_dict['scores'] = new_id2score_dict
         if self.tensor_dict is not None:
-            new_tensor_dict = {key: np.concatenate((val, other.tensor_dict[key]), axis=0) for key, val in self.tensor_dict.items()}
-        return ForwardEvaluation(self.data_type, self.global_step, new_idxs, new_yp, new_yp2, new_loss, new_id2answer_dict, tensor_dict=new_tensor_dict)
+            new_tensor_dict = {key: np.concatenate((val, other.tensor_dict[key]), axis=0) for key, val in
+                               self.tensor_dict.items()}
+        return ForwardEvaluation(self.data_type, self.global_step, new_idxs, new_yp, new_yp2, new_loss,
+                                 new_id2answer_dict, tensor_dict=new_tensor_dict)
 
     def __repr__(self):
         return "{} step {}: loss={:.4f}".format(self.data_type, self.global_step, self.loss)
@@ -225,12 +236,15 @@ class F1Evaluation(AccuracyEvaluation):
         new_f1s = self.f1s + other.f1s
         new_loss = (self.loss * self.num_examples + other.loss * other.num_examples) / len(new_correct)
         new_id2answer_dict = dict(list(self.id2answer_dict.items()) + list(other.id2answer_dict.items()))
-        new_id2score_dict = dict(list(self.id2answer_dict['scores'].items()) + list(other.id2answer_dict['scores'].items()))
+        new_id2score_dict = dict(
+            list(self.id2answer_dict['scores'].items()) + list(other.id2answer_dict['scores'].items()))
         new_id2answer_dict['scores'] = new_id2score_dict
-        return F1Evaluation(self.data_type, self.global_step, new_idxs, new_yp, new_yp2, new_y, new_correct, new_loss, new_f1s, new_id2answer_dict)
+        return F1Evaluation(self.data_type, self.global_step, new_idxs, new_yp, new_yp2, new_y, new_correct, new_loss,
+                            new_f1s, new_id2answer_dict)
 
     def __repr__(self):
-        return "{} step {}: accuracy={:.4f}, f1={:.4f}, loss={:.4f}".format(self.data_type, self.global_step, self.acc, self.f1, self.loss)
+        return "{} step {}: accuracy={:.4f}, f1={:.4f}, loss={:.4f}".format(self.data_type, self.global_step, self.acc,
+                                                                            self.f1, self.loss)
 
 
 class F1Evaluator(LabeledEvaluator):
@@ -240,10 +254,17 @@ class F1Evaluator(LabeledEvaluator):
         self.loss = model.loss
 
     def get_evaluation(self, sess, batch):
-        idxs, data_set = self._split_batch(batch)
+        """
+
+        :param sess:
+        :param batch: batch_size tuple indices, for example, from 0 to 59 or 60 to 119
+        :return:
+        """
+        idxs, data_set = self._split_batch(batch)  # idxs from 0 to 59, data_set a DataSet instance
         assert isinstance(data_set, DataSet)
         feed_dict = self._get_feed_dict(batch)
-        global_step, yp, yp2, loss, vals = sess.run([self.global_step, self.yp, self.yp2, self.loss, list(self.tensor_dict.values())], feed_dict=feed_dict)
+        global_step, yp, yp2, loss, vals = sess.run(
+            [self.global_step, self.yp, self.yp2, self.loss, list(self.tensor_dict.values())], feed_dict=feed_dict)
         y = data_set.data['y']
         if self.config.squash:
             new_y = []
@@ -286,7 +307,8 @@ class F1Evaluator(LabeledEvaluator):
             return get_phrase(context, xi, span)
 
         id2answer_dict = {id_: _get2(context, xi, span)
-                          for id_, xi, span, context in zip(data_set.data['ids'], data_set.data['x'], spans, data_set.data['p'])}
+                          for id_, xi, span, context in
+                          zip(data_set.data['ids'], data_set.data['x'], spans, data_set.data['p'])}
         id2score_dict = {id_: score for id_, score in zip(data_set.data['ids'], scores)}
         id2answer_dict['scores'] = id2score_dict
         correct = [self.__class__.compare2(yi, span) for yi, span in zip(y, spans)]
@@ -308,7 +330,7 @@ class F1Evaluator(LabeledEvaluator):
             aypi = argmax(ypi)
             mask = np.zeros(yp2i.shape)
             mask[aypi[0], aypi[1]:] = np.ones([yp2i.shape[1] - aypi[1]])
-            if tuple(start) == aypi and (stop[0], stop[1]-1) == argmax(yp2i * mask):
+            if tuple(start) == aypi and (stop[0], stop[1] - 1) == argmax(yp2i * mask):
                 return True
         return False
 
@@ -335,6 +357,7 @@ class MultiGPUF1Evaluator(F1Evaluator):
     """
 
     """
+
     def __init__(self, config, models, tensor_dict=None):
         """
 
@@ -346,14 +369,14 @@ class MultiGPUF1Evaluator(F1Evaluator):
         self.models = models
         with tf.name_scope("eval_concat"):
             N, M, JX = config.batch_size, config.max_num_sents, config.max_sent_size
-            self.yp = tf.concat( [padded_reshape(model.yp, [N, M, JX]) for model in models],0)
-            self.yp2 = tf.concat( [padded_reshape(model.yp2, [N, M, JX]) for model in models],0)
-            self.loss = tf.add_n([model.loss for model in models])/len(models)
+            self.yp = tf.concat([padded_reshape(model.yp, [N, M, JX]) for model in models], 0)
+            self.yp2 = tf.concat([padded_reshape(model.yp2, [N, M, JX]) for model in models], 0)
+            self.loss = tf.add_n([model.loss for model in models]) / len(models)
 
     def _split_batch(self, batches):
         """
 
-        :param batches:
+        :param batches: from 0 to 59, 60 to 119 and so on, 60 numbers each time
         :return:
         """
         idxs_list, data_sets = zip(*batches)
@@ -383,7 +406,8 @@ class ForwardEvaluator(Evaluator):
         idxs, data_set = batch
         assert isinstance(data_set, DataSet)
         feed_dict = self.model.get_feed_dict(data_set, False)
-        global_step, yp, yp2, loss, vals = sess.run([self.global_step, self.yp, self.yp2, self.loss, list(self.tensor_dict.values())], feed_dict=feed_dict)
+        global_step, yp, yp2, loss, vals = sess.run(
+            [self.global_step, self.yp, self.yp2, self.loss, list(self.tensor_dict.values())], feed_dict=feed_dict)
 
         yp, yp2 = yp[:data_set.num_examples], yp2[:data_set.num_examples]
         spans, scores = zip(*[get_best_span(ypi, yp2i) for ypi, yp2i in zip(yp, yp2)])
@@ -403,11 +427,13 @@ class ForwardEvaluator(Evaluator):
             return get_phrase(context, xi, span)
 
         id2answer_dict = {id_: _get2(context, xi, span)
-                          for id_, xi, span, context in zip(data_set.data['ids'], data_set.data['x'], spans, data_set.data['p'])}
+                          for id_, xi, span, context in
+                          zip(data_set.data['ids'], data_set.data['x'], spans, data_set.data['p'])}
         id2score_dict = {id_: score for id_, score in zip(data_set.data['ids'], scores)}
         id2answer_dict['scores'] = id2score_dict
         tensor_dict = dict(zip(self.tensor_dict.keys(), vals))
-        e = ForwardEvaluation(data_set.data_type, int(global_step), idxs, yp.tolist(), yp2.tolist(), float(loss), id2answer_dict, tensor_dict=tensor_dict)
+        e = ForwardEvaluation(data_set.data_type, int(global_step), idxs, yp.tolist(), yp2.tolist(), float(loss),
+                              id2answer_dict, tensor_dict=tensor_dict)
         return e
 
     @staticmethod
@@ -416,7 +442,7 @@ class ForwardEvaluator(Evaluator):
             aypi = argmax(ypi)
             mask = np.zeros(yp2i.shape)
             mask[aypi[0], aypi[1]:] = np.ones([yp2i.shape[1] - aypi[1]])
-            if tuple(start) == aypi and (stop[0], stop[1]-1) == argmax(yp2i * mask):
+            if tuple(start) == aypi and (stop[0], stop[1] - 1) == argmax(yp2i * mask):
                 return True
         return False
 
@@ -437,5 +463,3 @@ class ForwardEvaluator(Evaluator):
                 f1 = span_f1(true_span, pred_span)
                 max_f1 = max(f1, max_f1)
         return max_f1
-
-

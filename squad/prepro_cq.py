@@ -124,6 +124,9 @@ def prepro_each(args, data_type, start_ratio=0.0, stop_ratio=1.0, out_name="defa
     stop_at_index = int(round(len(source_data['data']) * stop_ratio))
 
     # 4. iterate the dataset
+    max_ques_size = 0
+    max_context_size = 0
+    max_word_size = 0
 
     for article_index, article in enumerate(tqdm(source_data['data'][start_at_index:stop_at_index])):
         xp, cxp, pp = [], [], []
@@ -147,6 +150,8 @@ def prepro_each(args, data_type, start_ratio=0.0, stop_ratio=1.0, out_name="defa
 
             list_of_wordlist = [process_tokens(tokens) for tokens in list_of_wordlist]
             # list_of_wordlist is a 2d stuff
+            for wordlist in list_of_wordlist:
+                max_context_size = max(max_context_size, len(wordlist))
 
             list_of_charlist = [[list(word) for word in wordlist] for wordlist in list_of_wordlist]
             # list of charlist is a 3d, sentence-dim, word-dim, char-dim
@@ -174,6 +179,7 @@ def prepro_each(args, data_type, start_ratio=0.0, stop_ratio=1.0, out_name="defa
 
             for question in paragraph['qas']:
                 question_wordslist = word_tokenize(question['question'])
+                max_ques_size = max(max_ques_size, len(question_wordslist))
                 # it's a list of words
                 question_charslist = [list(word) for word in question_wordslist]
                 # it's a list of charlist
@@ -241,6 +247,10 @@ def prepro_each(args, data_type, start_ratio=0.0, stop_ratio=1.0, out_name="defa
     word2vec_dict = get_word2vec(args, word_counter)
     lower_word2vec_dict = get_word2vec(args, lower_word_counter)
 
+    for word in word_counter:
+        max_word_size = max(max_word_size, len(word))
+
+
     # add context here
     data = {
         'q': q,  # list of word list of each questions, [['who','are', 'you'], ... ]
@@ -267,7 +277,7 @@ def prepro_each(args, data_type, start_ratio=0.0, stop_ratio=1.0, out_name="defa
     }
 
     print("saving ...")
-    save(args, data, shared, out_name)
+    # save(args, data, shared, out_name)
 
 
 def get_word2vec(args, word_counter):

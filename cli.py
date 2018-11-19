@@ -23,7 +23,7 @@ flags.DEFINE_string("device_type", "gpu", "device for computing gradients (paral
 flags.DEFINE_integer("num_gpus", 1, "num of gpus or cpus for computing gradients [1]")
 
 # Essential training and test options
-flags.DEFINE_string("mode", "test", "train | test | forward [test]")
+flags.DEFINE_string("mode", "train", "train | test | forward [test]")
 flags.DEFINE_boolean("load", True, "load saved data? [True]")
 flags.DEFINE_bool("single", False, "supervise only the answer sentence? [False]")
 flags.DEFINE_boolean("debug", False, "Debugging mode? [False]")
@@ -61,7 +61,7 @@ flags.DEFINE_bool("cpu_opt", False, "CPU optimization? GPU computation can be sl
 # Logging and saving options
 flags.DEFINE_boolean("progress", True, "Show progress? [True]")
 flags.DEFINE_integer("log_period", 100, "Log period [100]")
-flags.DEFINE_integer("eval_period", 100, "Eval period [1000]")
+flags.DEFINE_integer("eval_period", 1000, "Eval period [1000]")
 flags.DEFINE_integer("save_period", 100, "Save Period [1000]")
 flags.DEFINE_integer("max_to_keep", 20, "Max recent saves to keep [20]")
 flags.DEFINE_bool("dump_eval", True, "dump eval? [True]")

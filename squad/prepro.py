@@ -18,9 +18,10 @@ def main():
 
 def get_args():
     parser = argparse.ArgumentParser()
-    target_dir = "/Users/xavier.qiu/Documents/GitHub/bi-att-flow/data/squad"
+    source_dir = "/Users/xavier.qiu/Documents/GitHub/bi-att-flow/data/squad"
+    target_dir = "/Users/xavier.qiu/Documents/GitHub/bi-att-flow/data/test"
     glove_dir = "/Users/xavier.qiu/Documents/GitHub/bi-att-flow/data/glove"  # os.path.join(home, "data", "glove")
-    parser.add_argument('-s', "--source_dir", default=target_dir)
+    parser.add_argument('-s', "--source_dir", default=source_dir)
     parser.add_argument('-t', "--target_dir", default=target_dir)
     parser.add_argument('-d', "--debug", action='store_true')
     parser.add_argument("--train_ratio", default=0.9, type=int)

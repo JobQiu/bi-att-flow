@@ -66,10 +66,10 @@ def _train(config):
     data_filter = get_squad_data_filter(config)
 
     # config.load, True, "load saved data? [True]"
-    train_data = read_data(config, 'train', config.load, data_filter=data_filter)
-    dev_data = read_data(config, 'dev', config.load, data_filter=data_filter)
+    train_data = read_data(config, 'train', config.load, data_filter=data_filter)  # DataSet
+    dev_data = read_data(config, 'dev', config.load, data_filter=data_filter)  # DataSet
     update_config(config, [train_data, dev_data])
-
+    # update config such as max sent size and so on.
     _config_debug(config)
 
     word2vec_dict = train_data.shared['lower_word2vec'] if config.lower_word else train_data.shared['word2vec']
@@ -139,8 +139,16 @@ def _train(config):
 
 
 def _test(config):
+    data_filter = get_squad_data_filter(config)
+
+    # config.load, True, "load saved data? [True]"
+    train_data = read_data(config, 'train', config.load, data_filter=data_filter)  # DataSet
+    dev_data = read_data(config, 'dev', config.load, data_filter=data_filter)  # DataSet
+    update_config(config, [train_data, dev_data])
+
+    config.char_vocab_size = 281
+    config.word_vocab_size = 1224
     test_data = read_data(config, 'test', True)
-    update_config(config, [test_data])
 
     _config_debug(config)
 
@@ -189,6 +197,8 @@ def _forward(config):
     test_data = read_data(config, config.forward_name, True)
     update_config(config, [test_data])
 
+    config.char_vocab_size = 281
+    config.word_vocab_size = 1224
     _config_debug(config)
 
     if config.use_glove_for_unk:

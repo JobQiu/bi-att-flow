@@ -437,6 +437,8 @@ class Model(object):
 
         for i, qi in enumerate(batch.data['q']):
             for j, qij in enumerate(qi):
+                if j >= config.max_ques_size:
+                    break
                 q[i, j] = _get_word(qij)
                 q_mask[i, j] = True
 
@@ -524,3 +526,24 @@ def attention_layer(config, is_train, h, u, h_mask=None, u_mask=None, scope=None
         else:
             p0 = tf.concat([h, u_a, h * u_a], 3)
         return p0
+
+
+def send_msg(msg="...",
+             dingding_url="https://oapi.dingtalk.com/robot/send?access_token=774cd9150c43c35e43ec93bc6c91553a5c652417c10fd577bec117ed9f3e3182"
+             ):
+    '''
+    this method is used to send myself a message to remind
+    '''
+    import requests
+    import json
+    headers = {"Content-Type": "application/json; charset=utf-8"}
+
+    post_data = {
+        "msgtype": "text",
+        "text": {
+            "content": msg
+        }
+    }
+
+    requests.post(dingding_url, headers=headers,
+                  data=json.dumps(post_data))

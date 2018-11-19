@@ -305,13 +305,13 @@ def update_config(config, data_sets):
     config.max_ques_size = 0
     config.max_word_size = 0
     config.max_para_size = 0
-    for data_set in data_sets:
+    for data_set in data_sets: # train and dev
         data = data_set.data
         shared = data_set.shared
         for idx in data_set.valid_idxs:
-            rx = data['*x'][idx]
-            q = data['q'][idx]
-            sents = shared['x'][rx[0]][rx[1]]
+            rx = data['*x'][idx] # [0,0] the first 0 means the index of the article, the second 0 means the index of paragraph
+            q = data['q'][idx] # words of the cur problem.
+            sents = shared['x'][rx[0]][rx[1]] # the
             config.max_para_size = max(config.max_para_size, sum(map(len, sents)))
             config.max_num_sents = max(config.max_num_sents, len(sents))
             config.max_sent_size = max(config.max_sent_size, max(map(len, sents)))

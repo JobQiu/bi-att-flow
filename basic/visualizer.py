@@ -10,7 +10,6 @@ from tqdm import tqdm
 
 from jinja2 import Environment, FileSystemLoader
 
-from basic.evaluator import get_span_score_pairs
 from squad.utils import get_best_span, get_span_score_pairs
 
 
@@ -21,6 +20,7 @@ def bool_(string):
         return False
     else:
         raise Exception()
+
 
 def get_args():
     parser = argparse.ArgumentParser()
@@ -51,7 +51,7 @@ def accuracy2_visualizer(args):
     run_id = args.run_id.zfill(2)
     step = args.step
 
-    eval_path =os.path.join("out", model_name, run_id, "eval", "{}-{}.json".format(data_type, str(step).zfill(6)))
+    eval_path = os.path.join("out", model_name, run_id, "eval", "{}-{}.json".format(data_type, str(step).zfill(6)))
     print("loading {}".format(eval_path))
     eval_ = json.load(open(eval_path, 'r'))
 
@@ -79,14 +79,15 @@ def accuracy2_visualizer(args):
     shared = json.load(open(shared_path, 'r'))
 
     rows = []
-    for i, (idx, yi, ypi, yp2i) in tqdm(enumerate(zip(*[eval_[key] for key in ('idxs', 'y', 'yp', 'yp2')])), total=len(eval_['idxs'])):
+    for i, (idx, yi, ypi, yp2i) in tqdm(enumerate(zip(*[eval_[key] for key in ('idxs', 'y', 'yp', 'yp2')])),
+                                        total=len(eval_['idxs'])):
         id_, q, rx, answers = (data[key][idx] for key in ('ids', 'q', '*x', 'answerss'))
         x = shared['x'][rx[0]][rx[1]]
         ques = [" ".join(q)]
         para = [[word for word in sent] for sent in x]
         span = get_best_span(ypi, yp2i)
         ap = get_segment(para, span)
-        score = "{:.3f}".format(ypi[span[0][0]][span[0][1]] * yp2i[span[1][0]][span[1][1]-1])
+        score = "{:.3f}".format(ypi[span[0][0]][span[0][1]] * yp2i[span[1][0]][span[1][1] - 1])
 
         row = {
             'id': id_,
@@ -100,7 +101,7 @@ def accuracy2_visualizer(args):
             'a': answers,
             'ap': ap,
             'score': score
-               }
+        }
         rows.append(row)
 
         if i % num_per_page == 0:
@@ -117,10 +118,12 @@ def accuracy2_visualizer(args):
     os.chdir(html_dir)
     port = args.port
     host = args.host
+
     # Overriding to suppress log message
     class MyHandler(http.server.SimpleHTTPRequestHandler):
         def log_message(self, format, *args):
             pass
+
     handler = MyHandler
     httpd = socketserver.TCPServer((host, port), handler)
     if args.open == 'True':

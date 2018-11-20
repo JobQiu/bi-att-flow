@@ -64,7 +64,7 @@ def _config_debug(config):
 def _train(config):
     # this get squad data filter return a function
     data_filter = get_squad_data_filter(config)
-
+    data_filter = None
     # config.load, True, "load saved data? [True]"
     train_data = read_data(config, 'train', config.load, data_filter=data_filter)  # DataSet
     dev_data = read_data(config, 'dev', config.load, data_filter=data_filter)  # DataSet

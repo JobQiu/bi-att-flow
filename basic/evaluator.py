@@ -266,6 +266,9 @@ class F1Evaluator(LabeledEvaluator):
         global_step, yp, yp2, loss, vals = sess.run(
             [self.global_step, self.yp, self.yp2, self.loss, list(self.tensor_dict.values())], feed_dict=feed_dict)
         y = data_set.data['y']
+        for y_t, y1_p, y2_p in zip(y, yp, yp2):
+            print((str)(y_t) + ", " + (str)(np.argmax(y1_p)) + ", " + (str)(np.argmax(y2_p)))
+
         if self.config.squash:
             new_y = []
             for xi, yi in zip(data_set.data['x'], y):

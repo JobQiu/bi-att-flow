@@ -161,7 +161,7 @@ def read_data(config, dataset, ref, data_filter=None):
     :param config: tf flags that store configurations
     :param dataset: train, or dev
     :param ref: True, what does this mean, True, "load saved data? [True]"
-    :param data_filter:
+    :param data_filter: data filter is used to filter some samples
     :return:
     """
     data_path = os.path.join(config.data_dir, "data_{}.json".format(dataset))
@@ -193,7 +193,7 @@ def read_data(config, dataset, ref, data_filter=None):
         word2vec_dict = shared['lower_word2vec'] if config.lower_word else shared['word2vec']
         word_counter = shared['lower_word_counter'] if config.lower_word else shared['word_counter']
         char_counter = shared['char_counter']
-        if config.finetune:
+        if config.finetune: # false here
             shared['word2idx'] = {word: idx + 2 for idx, word in
                                   enumerate(word for word, count in word_counter.items()
                                             if count > config.word_count_th or (
@@ -254,26 +254,26 @@ def get_squad_data_filter(config):
             return False
 
         # x filter
-        xi = x[rx[0]][rx[1]]
-        if config.squash:
+        xi = x[rx[0]][rx[1]] # rx[0] is the corresponding index of article, rx[1] is the para index in this article
+        if config.squash: # false here
             for start, stop in y:
                 stop_offset = sum(map(len, xi[:stop[0]]))
                 if stop_offset + stop[1] > config.para_size_th:
                     return False
             return True
 
-        if config.single:
+        if config.single: # false here
             for start, stop in y:
                 if start[0] != stop[0]:
                     return False
 
-        if config.data_filter == 'max':
+        if config.data_filter == 'max': # this is true
             for start, stop in y:
-                if stop[0] >= config.num_sents_th:
+                if stop[0] >= config.num_sents_th: # 8
                     return False
                 if start[0] != stop[0]:  # in the same sentence
                     return False
-                if stop[1] >= config.sent_size_th:
+                if stop[1] >= config.sent_size_th: # 400
                     return False
         elif config.data_filter == 'valid':
             if len(xi) > config.num_sents_th:

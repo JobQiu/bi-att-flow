@@ -42,9 +42,11 @@ def zip_save(args):
 
     os.system("zip {} -r {}".format(args.out, save_dir))
 
+
 def main():
     args = get_args()
     zip_save(args)
+
 
 if __name__ == "__main__":
     main()

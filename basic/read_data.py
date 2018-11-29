@@ -177,6 +177,7 @@ def read_data(config, dataset, ref, data_filter=None):
     if data_filter is None:  # if don't use data filter
         valid_idxs = range(num_examples)
     else:
+        # if the filter is not none, we will filter some samples, for example, the length is too long
         mask = []
         keys = data.keys()  # q, cq and so on,
         values = data.values()
@@ -193,7 +194,7 @@ def read_data(config, dataset, ref, data_filter=None):
         word2vec_dict = shared['lower_word2vec'] if config.lower_word else shared['word2vec']
         word_counter = shared['lower_word_counter'] if config.lower_word else shared['word_counter']
         char_counter = shared['char_counter']
-        if config.finetune: # false here
+        if config.finetune:  # false here
             shared['word2idx'] = {word: idx + 2 for idx, word in
                                   enumerate(word for word, count in word_counter.items()
                                             if count > config.word_count_th or (
@@ -254,26 +255,26 @@ def get_squad_data_filter(config):
             return False
 
         # x filter
-        xi = x[rx[0]][rx[1]] # rx[0] is the corresponding index of article, rx[1] is the para index in this article
-        if config.squash: # false here
+        xi = x[rx[0]][rx[1]]  # rx[0] is the corresponding index of article, rx[1] is the para index in this article
+        if config.squash:  # false here
             for start, stop in y:
                 stop_offset = sum(map(len, xi[:stop[0]]))
                 if stop_offset + stop[1] > config.para_size_th:
                     return False
             return True
 
-        if config.single: # false here
+        if config.single:  # false here
             for start, stop in y:
                 if start[0] != stop[0]:
                     return False
 
-        if config.data_filter == 'max': # this is true
+        if config.data_filter == 'max':  # this is true
             for start, stop in y:
-                if stop[0] >= config.num_sents_th: # 8
+                if stop[0] >= config.num_sents_th:  # 8
                     return False
                 if start[0] != stop[0]:  # in the same sentence
                     return False
-                if stop[1] >= config.sent_size_th: # 400
+                if stop[1] >= config.sent_size_th:  # 400
                     return False
         elif config.data_filter == 'valid':
             if len(xi) > config.num_sents_th:
@@ -309,8 +310,8 @@ def update_config(config, data_sets):
         data = data_set.data
         shared = data_set.shared
         for idx in data_set.valid_idxs:
-            rx = data['*x'][
-                idx]  # [0,0] the first 0 means the index of the article, the second 0 means the index of paragraph
+            rx = data['*x'][idx]
+            # [0,0] the first 0 means the index of the article, the second 0 means the index of paragraph
             q = data['q'][idx]  # words of the cur problem.
             sents = shared['x'][rx[0]][rx[1]]  # the
             config.max_para_size = max(config.max_para_size, sum(map(len, sents)))

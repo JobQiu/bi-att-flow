@@ -113,7 +113,7 @@ def read_data(config, data_type, ref, data_filter=None):
 def get_squad_data_filter(config):
     def data_filter(data_point, shared):
         assert shared is not None
-        rx, rcx, q, cq, y  = (data_point[key] for key in ('*x', '*cx', 'q', 'cq', 'y'))
+        rx, rcx, q, cq, y = (data_point[key] for key in ('*x', '*cx', 'q', 'cq', 'y'))
         x, cx, stx = shared['x'], shared['cx'], shared['stx']
         if len(q) > config.ques_size_th:
             return False
@@ -126,6 +126,7 @@ def get_squad_data_filter(config):
         if any(nltk.tree.Tree.fromstring(s).height() > config.tree_height_th for s in stxi):
             return False
         return True
+
     return data_filter
 
 

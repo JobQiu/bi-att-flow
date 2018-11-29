@@ -276,7 +276,7 @@ class F1Evaluator(LabeledEvaluator):
             print("the answer is: {}".format(data_set.data['x'][ind][0][y_t[0][0][1]:y_t[0][1][1]]))
             print(
                 "the pred answer is: {}".format(
-                    data_set.data['x'][ind][0][min(y1_index, y2_index):max(y1_index, y2_index)]))
+                    data_set.data['x'][ind][0][min(y1_index, y2_index):max(y1_index, y2_index)+1]))
 
             ind += 1
 

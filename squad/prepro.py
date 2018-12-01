@@ -260,6 +260,7 @@ def prepro_each(args, data_type, start_ratio=0.0, stop_ratio=1.0, out_name="defa
         'answerss': answerss,  # the content of the answer
         '*p': rx  #
     }
+    # the following variables are shared by several question,
     shared = {
         'x': x,  # words of each paragraph
         'cx': cx,  # characters of each

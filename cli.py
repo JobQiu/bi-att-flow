@@ -71,6 +71,7 @@ flags.DEFINE_bool("dump_pickle", True, "Dump pickle instead of json? [True]")
 flags.DEFINE_float("decay", 0.9, "Exponential moving average decay for logging values [0.9]")
 
 # Thresholds for speed and less memory usage
+# the count of a word must be larger than 10 to be counted into embedding
 flags.DEFINE_integer("word_count_th", 10, "word count th [100]")
 flags.DEFINE_integer("char_count_th", 50, "char count th [500]")
 flags.DEFINE_integer("sent_size_th", 400, "sent size th [64]")

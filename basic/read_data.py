@@ -214,9 +214,11 @@ def read_data(config, dataset, ref, data_filter=None):
         shared['word2idx'][UNK] = 1
         shared['char2idx'][NULL] = 0
         shared['char2idx'][UNK] = 1
-        json.dump({'word2idx': shared['word2idx'], 'char2idx': shared['char2idx']}, open(shared_path, 'w'))
+        json.dump({'word2idx': shared['word2idx'],
+                   'char2idx': shared['char2idx']},
+                  open(shared_path, 'w'))
     else:
-        new_shared = json.load(open(shared_path, 'r'))
+        new_shared = json.load(open(shared_path, 'r')) # the saved word2idx and char2idx
         for key, val in new_shared.items():
             shared[key] = val
 

@@ -252,6 +252,7 @@ class F1Evaluator(LabeledEvaluator):
         super(F1Evaluator, self).__init__(config, model, tensor_dict=tensor_dict)
         self.yp2 = model.yp2
         self.loss = model.loss
+        self.print = config.print
 
     def get_evaluation(self, sess, batch):
         """
@@ -267,18 +268,20 @@ class F1Evaluator(LabeledEvaluator):
             [self.global_step, self.yp, self.yp2, self.loss, list(self.tensor_dict.values())], feed_dict=feed_dict)
         y = data_set.data['y']
         ind = 0
-        for y_t, y1_p, y2_p in zip(y, yp, yp2):
-            y1_index = np.argmax(y1_p)
-            y2_index = np.argmax(y2_p)
-            print((str)(y_t) + ", " + (str)(y1_index) + ", " + (str)(y2_index))
-            print("the question is: {}".format(data_set.data['q'][ind]))
-            # print("the answer is: {}".format(data_set.data['answerss'][ind]))
-            print("the answer is: {}".format(data_set.data['x'][ind][0][y_t[0][0][1]:y_t[0][1][1]]))
-            print(
-                "the pred answer is: {}".format(
-                    data_set.data['x'][ind][0][min(y1_index, y2_index):max(y1_index, y2_index)+1]))
 
-            ind += 1
+        if self.print:
+            for y_t, y1_p, y2_p in zip(y, yp, yp2):
+                y1_index = np.argmax(y1_p)
+                y2_index = np.argmax(y2_p)
+                print((str)(y_t) + ", " + (str)(y1_index) + ", " + (str)(y2_index))
+                print("the question is: {}".format(data_set.data['q'][ind]))
+                # print("the answer is: {}".format(data_set.data['answerss'][ind]))
+                print("the answer is: {}".format(data_set.data['x'][ind][0][y_t[0][0][1]:y_t[0][1][1]]))
+                print(
+                    "the pred answer is: {}".format(
+                        data_set.data['x'][ind][0][min(y1_index, y2_index):max(y1_index, y2_index) + 1]))
+
+                ind += 1
 
         if self.config.squash:
             new_y = []

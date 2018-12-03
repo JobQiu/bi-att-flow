@@ -190,7 +190,11 @@ def read_data(config, dataset, ref, data_filter=None):
 
     shared_path = config.shared_path or os.path.join(config.out_dir, "shared.json")
 
-    if not os.path.isfile(shared_path) or not ref:
+    if True:
+        new_shared = json.load(open(shared_path, 'r'))  # the saved word2idx and char2idx
+        for key, val in new_shared.items():
+            shared[key] = val
+    else:  # not os.path.isfile(shared_path) or not ref:
         word2vec_dict = shared['lower_word2vec'] if config.lower_word else shared['word2vec']
         word_counter = shared['lower_word_counter'] if config.lower_word else shared['word_counter']
         char_counter = shared['char_counter']
@@ -217,10 +221,6 @@ def read_data(config, dataset, ref, data_filter=None):
         json.dump({'word2idx': shared['word2idx'],
                    'char2idx': shared['char2idx']},
                   open(shared_path, 'w'))
-    else:
-        new_shared = json.load(open(shared_path, 'r')) # the saved word2idx and char2idx
-        for key, val in new_shared.items():
-            shared[key] = val
 
     if config.use_glove_for_unk:
         # create new word2idx and word2vec

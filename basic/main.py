@@ -32,7 +32,9 @@ def main(config):
 def set_dirs(config):
     # create directories
     assert config.load or config.mode == 'train', "config.load must be True if not training"
-    if not config.load and os.path.exists(config.out_dir):
+    if config.keep_out_dir:
+        pass
+    elif not config.load and os.path.exists(config.out_dir):
         shutil.rmtree(config.out_dir)
 
     config.save_dir = os.path.join(config.out_dir, "save")
@@ -145,8 +147,8 @@ def _test(config):
     dev_data = read_data(config, 'dev', False, data_filter=data_filter)  # DataSet
     update_config(config, [train_data, dev_data])
 
-    #config.char_vocab_size = 281  # 107
-    #config.word_vocab_size = 1224  # 224
+    # config.char_vocab_size = 281  # 107
+    # config.word_vocab_size = 1224  # 224
     test_data = read_data(config, 'test', True)
 
     _config_debug(config)
@@ -196,8 +198,8 @@ def _forward(config):
     test_data = read_data(config, config.forward_name, True)
     update_config(config, [test_data])
 
-    #config.char_vocab_size = 281
-    #config.word_vocab_size = 1224
+    # config.char_vocab_size = 281
+    # config.word_vocab_size = 1224
     _config_debug(config)
 
     if config.use_glove_for_unk:

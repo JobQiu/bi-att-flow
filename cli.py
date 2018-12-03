@@ -116,6 +116,7 @@ flags.DEFINE_string("answer_dir", "", "")
 flags.DEFINE_multi_float("emb_mat", None, "")
 flags.DEFINE_multi_float("new_emb_mat", None, "")
 flags.DEFINE_bool("print", False, "print the evaluation?[False]")
+flags.DEFINE_boolean("keep_out_dir", True, "")
 
 
 def main(_):

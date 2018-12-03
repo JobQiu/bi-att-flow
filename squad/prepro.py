@@ -160,9 +160,9 @@ def prepro_each(args, data_type, start_ratio=0.0, stop_ratio=1.0, out_name="defa
     for article_index, article in enumerate(tqdm(source_data['data'][start_at_index:stop_at_index])):
         xp, cxp = [], []
         pp = []
-        x.append(xp)
-        cx.append(cxp)
-        p.append(pp)
+        x.append(xp)  # article_paragraph_sentence_wordlist
+        cx.append(cxp)  # article_paragraph_sentence_word_charlist
+        p.append(pp)  # article_contextlist
 
         # for each paragrph of the article
         for paragraph_index, paragraph in enumerate(article['paragraphs']):
@@ -176,9 +176,9 @@ def prepro_each(args, data_type, start_ratio=0.0, stop_ratio=1.0, out_name="defa
             # given xi, add chars
             list_of_charlist = [[list(word) for word in word_list] for word_list in list_of_wordlist]
             # cxi are characters for each words
-            xp.append(list_of_wordlist)
-            cxp.append(list_of_charlist)
-            pp.append(context)
+            xp.append(list_of_wordlist)  # paragraph_sentence_wordlist
+            cxp.append(list_of_charlist)  # paragraph_sentence_word_charlist
+            pp.append(context)  # contextlist
 
             # update the counter to plus the number of questions
             for wordlist in list_of_wordlist:
@@ -230,9 +230,9 @@ def prepro_each(args, data_type, start_ratio=0.0, stop_ratio=1.0, out_name="defa
                     for qijk in qij:
                         char_counter[qijk] += 1
 
-                q.append(question_wordslist)
-                cq.append(question_charslist)
-                y.append(yi)
+                q.append(question_wordslist) # question_wordlist,
+                cq.append(question_charslist) # qeustion_word_charlist
+                y.append(yi) #
                 cy.append(cyi)
                 rx.append(rxi)
                 rcx.append(rxi)
